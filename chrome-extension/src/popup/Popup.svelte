@@ -135,7 +135,7 @@
 
     chrome.scripting.executeScript({
       target: { tabId: tab.id! },
-      func: (imageSrc: string) => {
+      func: (imageSrc: string, geminiResponse: string) => {
         // Heading icons
         let mainHeading = document.getElementById("main-heading");
         console.log("Main heading:", mainHeading);
@@ -155,7 +155,7 @@
         mainHeading.insertAdjacentElement("beforebegin", summary);
         summary.innerText = geminiResponse
       },
-      args: [imageSrc]
+      args: [imageSrc, geminiResponse]
     })
   }
 </script>
