@@ -52,8 +52,8 @@ def fact_check_article(url: str = Query(..., description="BBC article URL")):
         return {"error": "Could not fetch article text."}
 
     # Run your scoring algorithm
-    subjectivity, polarity, evidence, total = early_algorithm.MainScore(text)
-
+    subjectivity, polarity, evidence, total, highlighted_sentences, highlighted_words = early_algorithm.MainScore(text)
+    
     related_articles_json = [
             {"title": t, "link": l} for t, l in related_articles
     ] if related_articles else []
@@ -75,6 +75,8 @@ def fact_check_article(url: str = Query(..., description="BBC article URL")):
         "polarity": polarity,
         "evidence": evidence,
         "total": total,
+        "highlighted_sentences": highlighted_sentences,
+        "highlighted_words": highlighted_words,
         "related_articles": related_articles_json,
         "response": response
     }
