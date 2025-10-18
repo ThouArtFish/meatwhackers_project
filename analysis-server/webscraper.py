@@ -8,6 +8,8 @@ class BaseScraper:
     
     def __init__(self, base_url):
         self.base_url = base_url
+        self.html = self.get_page(base_url)
+        self.soup = self.parse_html(self.html) if self.html else None
 
     def get_page(self, url):
         """Fetch the HTML content of a URL."""
@@ -108,37 +110,37 @@ class BBCBusinessScraper(BaseScraper):
             self.get_journalist(article)
         return articles
 
-    def compare_to_times(self,article):
-        newsURL = f"https://www.bing.com/news/search?q={article.title}"
-        newsPage = requests.get(newsURL)
-        newsSoup = BeautifulSoup(newsPage.text,'html.parser')
-        cards = newsSoup.find_all("div", class_="news-card-body card-with-cluster")
 
-        for card in cards[:3]:
-            a_tag = card.find("a", class_="title")
-            if a_tag:
-                h2_tag = a_tag.find("h2")
-                if h2_tag:
-                    headline = h2_tag.get_text(strip=True)
-                    link = a_tag.get("href")
-                    print(headline + link)
-                    self.related_articles.append((headline,link))
-        return self.related_articles
-                
-
-
-if __name__ == "__main__":
-    scraper = BBCBusinessScraper()
-    headlines = scraper.fetch_headlines()
-    print(f"Found {len(headlines)} headlines:")
-    for h in headlines[:5]:
-        print("-", h.title, "->", h.link)
+class BBCArticleScraper(BaseScraper):
+    def get_heading(self):
+        # the heading container has an id of 'main-heading'
+        # a span inside the container has the text
+        heading = self.soup.find("h1", id="main-heading")
+        return heading.get_text(strip=True) if heading else None
     
-    # Example: Fetch the full text for the first article
-    if headlines:
-        article_text = scraper.fetch_article_text(headlines[0])
-        print("\nFirst article text snippet:\n", article_text[:700])
-        journalist_text = scraper.get_journalist(headlines[0])
-        print(journalist_text)
-        related_articles = scraper.compare_to_times(headlines[0])
-        print(related_articles)
+    def get_text_content(self):
+        """Fetch the full text from a given article page."""
+        # Typical BBC article paragraphs
+        paragraphs = self.soup.select("main p")
+        text = " ".join(p.get_text(strip=True) for p in paragraphs)
+        return text
+    
+    def get_journalist(self):
+        journalist = self.soup.find("span",class_="ssrcss-vd0pba-TextContributorName epw3ir01")
+        if not journalist:
+            return None
+        journalist_name = journalist.get_text(strip=True)
+        if not journalist_name:
+            return None
+        formatted_name = journalist_name.replace(" ", "+")
+        url = f"https://www.bbc.co.uk/search?q={formatted_name}&d=NEWS_PS"
+        journalist_page = requests.get(url)
+        journalist_soup = BeautifulSoup(journalist_page.text, 'html.parser')
+        last_text = journalist_soup.select_one('ol[role="list"] li:last-child div').get_text(strip=True)
+        return (journalist_name, int(last_text))
+    
+if __name__ == "__main__":
+    scraper = BBCArticleScraper('https://www.bbc.co.uk/news/articles/cq502xl53xqo')
+    print(scraper.get_heading())
+    print(scraper.get_text_content())
+    print(scraper.get_journalist())
