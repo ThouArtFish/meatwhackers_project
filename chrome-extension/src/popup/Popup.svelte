@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Spinner from "./Spinner.svelte";
+
   const PYTHON_SERVER_URL = "http://localhost:8000";
 
   type HighlightType = "person" | "organization" | "date" | "evidence";
@@ -153,7 +155,7 @@
         let summary = document.createElement("p");
         summary.id = "summary";
         mainHeading.insertAdjacentElement("beforebegin", summary);
-        summary.innerText = geminiResponse
+        summary.innerText = geminiResponse;
       },
       args: [imageSrc, geminiResponse]
     })
@@ -163,6 +165,7 @@
 <img src="src/assets/logo.svg" alt="Logo" />
 
 {#if state === "factChecking"}
+  <Spinner />
   <p>Fact checking in progress...</p>
 {:else if state === "completed"}
   <p>Fact check complete!</p>
