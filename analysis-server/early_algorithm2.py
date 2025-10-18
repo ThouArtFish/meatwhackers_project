@@ -5,9 +5,9 @@ import torch
 import math
 
 class TextAnalyzer:
-    def __init__(self, text, journalist_info):
+    def __init__(self, text, articles_count):
         self.text = text
-        self.journalist_info = journalist_info
+        self.articles_count = articles_count
         self.nlp = spacy.load("en_core_web_lg")
         self.doc = self.nlp(text)
         self.phrases = [sent.text for sent in self.doc.sents]
@@ -27,29 +27,28 @@ class TextAnalyzer:
     "           neutral or background description (factual context without claims)"
         ]
 
-        self.highlight_sentences = {"evidence": []}
+        self.highlighted_sentences = {"evidence": []}
         self.months = {'january', 'february', 'march', 'april', 'may', 'june', 'july',
                        'august', 'september', 'october', 'november', 'december',
                        'jan', 'feb', 'mar', 'apr', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'}
 
-    def empty(function):
-        pass
-    def polarity(self, sentence):
+    
+    def get_polarity(self, sentence):
         return TextBlob(sentence).polarity
 
 
-    def subjectivity(self, sentence):
+    def get_subjectivity(self, sentence):
         return TextBlob(sentence).subjectivity
 
     # --- Evidence Scoring ---
-    def _highlight_sentence(self, sentence, score):
+    def get_highlighted_sentences(self, sentence, score):
         if score == 1 or score == 0.5:
-            self.highlight_sentences["evidence"].append(sentence)
+            self.highlighted_sentences["evidence"].append(sentence)
         elif score == -1:
-            self.highlight_sentences.setdefault("hearsay", []).append(sentence)
+            self.highlighted_sentences.setdefault("hearsay", []).append(sentence)
 
 
-    def evidence_score(self, phrase):
+    def get_evidence_score(self, phrase):
         result = self.classifier(phrase, self.categories)
         label = result['labels'][0]
         score = 0
@@ -63,19 +62,19 @@ class TextAnalyzer:
             score = 0
 
 
-        self._highlight_sentence(phrase, score)
+        self.get_highlighted_sentences(phrase, score)
         multiplier = result['scores'][0]
         return multiplier * score
 
     # --- Line-level Scores ---
-    def line_scores(self):
+    def get_line_scores(self):
         return [
             [phrase, self.subjectivity(phrase), self.evidence_score(phrase)]
             for phrase in self.phrases
         ]
 
     # --- Entity Highlighting ---
-    def highlight_words(self):
+    def get_highlighted_words(self):
        
         categories = {
             "person": [], "org": [], "gpe": [], "date": [], "time": [],
@@ -116,8 +115,8 @@ class TextAnalyzer:
 
     # --- Aggregate Score ---
     def calculate_score(self):
-        sub_scores = sum(self.subjectivity(p) for p in self.phrases)
-        evi_scores = sum(self.evidence_score(p) for p in self.phrases)
+        sub_scores = sum(self.get_subjectivity(p) for p in self.phrases)
+        evi_scores = sum(self.get_evidence_score(p) for p in self.phrases)
         sub_count = len(self.phrases)
         evi_count = len(self.phrases)
 
@@ -137,15 +136,15 @@ class TextAnalyzer:
         subjectivity, polarity, evidence, total = self.calculate_score()
         highlighted_sentences = [
                 {"text": s, "type": typ} 
-                for typ, sentences in self.highlight_sentences.items() 
+                for typ, sentences in self.highlighted_sentences.items() 
                 for s in sentences
             ]
 
-        highlighted_words = self.highlight_words()
+        highlighted_words = self.get_highlighted_words()
         #add score per evidence
         total += 0.01 * len(highlighted_words)
 
-        boost = min(0.15, 0.05 * math.log10(self.journalist_info + 1))
+        boost = min(0.15, 0.05 * math.log10(self.articles_count + 1))
 
         total += boost
 
