@@ -89,7 +89,12 @@ class BBCBusinessScraper(BaseScraper):
         journalist_name = journalist.get_text(strip=True)
         if not journalist_name:
             return -1
-        return journalist_name
+        formatted_name = journalist_name.replace(" ", "+")
+        url = f"https://www.bbc.co.uk/search?q={formatted_name}&d=NEWS_PS"
+        journalist_page = requests.get(url)
+        journalist_soup = BeautifulSoup(journalist_page.text,'html.parser')
+        last_text = journalist_soup.select_one('ol[role="list"] li:last-child div').get_text(strip=True)
+        return (journalist_name,int(last_text))
         
 
     def get_all_articles(self, limit=None):
