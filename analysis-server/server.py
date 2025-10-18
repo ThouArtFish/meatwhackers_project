@@ -1,5 +1,6 @@
 import fastapi
 import uvicorn
+import webscraper
 
 app = fastapi.FastAPI()
 
@@ -7,6 +8,10 @@ app = fastapi.FastAPI()
 def fact_check_headlines():
     
     
+    pass
+
+@app.post("/factcheck_article")
+def fact_check_article():
     pass
 
 if __name__ == "__main__":
