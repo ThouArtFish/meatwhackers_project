@@ -1,9 +1,9 @@
-import fastapi
+from fastapi import FastAPI, Query
 import uvicorn
 import webscraper
-import EarlyAlogirthm
+import early_algorithm
 
-app = fastapi.FastAPI()
+app = FastAPI()
 
 
 
@@ -18,9 +18,9 @@ def fact_check_headlines():
     headlines = scraper.fetch_headlines()
     
     headline_scores = []
-    for headline in headlines:
+    for headline in headlines[:10]:
         text = scraper.fetch_article_text(headline)
-        subjectivity, polarity, evidence, total = EarlyAlogirthm.MainScore(text)
+        subjectivity, polarity, evidence, total = early_algorithm.MainScore(text)
 
         headline_scores.append({
             "title": headline.title,
@@ -39,13 +39,32 @@ def fact_check_headlines():
     
     
 
-@app.post("/factcheck_article")
-def fact_check_article():
+@app.get("/factcheck_article")
+def fact_check_article(url: str = Query(..., description="BBC article URL")):
+    # Initialize the scraper with the given article URL
+    scraper = webscraper.BBCArticleScraper(url)
 
-    subjectivity,polarity,evidence,total = EarlyAlogirthm.MainScore(text)
+    # Get article details
+    title = scraper.get_heading()
+    text = scraper.get_text_content()
+    journalist_info = scraper.get_journalist()
+
+    if not text:
+        return {"error": "Could not fetch article text."}
+
+    # Run your scoring algorithm
+    subjectivity, polarity, evidence, total = early_algorithm.MainScore(text)
+
     return {
-        
+        "title": title,
+        "url": url,
+        "journalist": journalist_info[0] if journalist_info else None,
+        "articles_by_journalist": journalist_info[1] if journalist_info else None,
+        "subjectivity": subjectivity,
+        "polarity": polarity,
+        "evidence": evidence,
+        "total": total
     }
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run("server:app", host='127.0.0.1', port=8000, reload=True,timeout_keep_alive=300)
