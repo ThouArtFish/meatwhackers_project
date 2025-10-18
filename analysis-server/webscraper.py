@@ -140,11 +140,5 @@ if __name__ == "__main__":
         print("\nFirst article text snippet:\n", article_text[:700])
         journalist_text = scraper.get_journalist(headlines[0])
         print(journalist_text)
-<<<<<<< HEAD:Webscraper.py
-
-
-
-=======
         related_articles = scraper.compare_to_times(headlines[0])
         print(related_articles)
->>>>>>> c16999cc05e950689a6e0145707c1008a2b40371:analysis-server/webscraper.py
