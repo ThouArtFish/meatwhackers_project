@@ -133,10 +133,11 @@ class TextAnalyzer:
                 for s in sentences
             ]
 
+        highlighted_words = self.highlight_words()
         #add score per evidence
         total += 0.01 * len(highlighted_words)
 
-        highlighted_words = self.highlight_words()
+        
         return subjectivity, polarity, evidence, total, highlighted_sentences, highlighted_words
 #ss
 #sadasdas
