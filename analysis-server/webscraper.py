@@ -42,6 +42,7 @@ class BBCBusinessScraper(BaseScraper):
     def __init__(self, base_url="https://www.bbc.co.uk/news/business"):
         super().__init__(base_url)
         self.headlines = []
+        self.related_articles = []
 
     def fetch_headlines(self):
         """Scrape headlines and links from the BBC Business page."""
@@ -89,7 +90,12 @@ class BBCBusinessScraper(BaseScraper):
         journalist_name = journalist.get_text(strip=True)
         if not journalist_name:
             return -1
-        return journalist_name
+        formatted_name = journalist_name.replace(" ", "+")
+        url = f"https://www.bbc.co.uk/search?q={formatted_name}&d=NEWS_PS"
+        journalist_page = requests.get(url)
+        journalist_soup = BeautifulSoup(journalist_page.text,'html.parser')
+        last_text = journalist_soup.select_one('ol[role="list"] li:last-child div').get_text(strip=True)
+        return (journalist_name,int(last_text))
         
 
     def get_all_articles(self, limit=None):
@@ -101,6 +107,24 @@ class BBCBusinessScraper(BaseScraper):
             self.fetch_article_text(article)
             self.get_journalist(article)
         return articles
+
+    def compare_to_times(self,article):
+        newsURL = f"https://www.bing.com/news/search?q={article.title}"
+        newsPage = requests.get(newsURL)
+        newsSoup = BeautifulSoup(newsPage.text,'html.parser')
+        cards = newsSoup.find_all("div", class_="news-card-body card-with-cluster")
+
+        for card in cards[:3]:
+            a_tag = card.find("a", class_="title")
+            if a_tag:
+                h2_tag = a_tag.find("h2")
+                if h2_tag:
+                    headline = h2_tag.get_text(strip=True)
+                    link = a_tag.get("href")
+                    print(headline + link)
+                    self.related_articles.append((headline,link))
+        return self.related_articles
+                
 
 
 if __name__ == "__main__":
@@ -116,6 +140,11 @@ if __name__ == "__main__":
         print("\nFirst article text snippet:\n", article_text[:700])
         journalist_text = scraper.get_journalist(headlines[0])
         print(journalist_text)
+<<<<<<< HEAD:Webscraper.py
 
 
 
+=======
+        related_articles = scraper.compare_to_times(headlines[0])
+        print(related_articles)
+>>>>>>> c16999cc05e950689a6e0145707c1008a2b40371:analysis-server/webscraper.py

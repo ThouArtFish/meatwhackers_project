@@ -1,21 +1,40 @@
 <script lang="ts">
+  const PYTHON_SERVER_URL = "http://localhost:8000";
+
+  let content: string | null = null;
+
   // fact checks the current page the user has open
   // sends a request to the python server
   // the python server returns the names of articles and the fact check results
   async function factCheck() {
     console.log("Fact checking the current page...");
+
+    const res = await fetch(`${PYTHON_SERVER_URL}/factcheck`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        url: window.location.href
+      })
+    })
+
+    content = await res.text();
   }
 </script>
 
 <template>
   <main>
     <h3>Fact or Fake</h3>
-
-    <div>
       <button on:click={factCheck}>
         Fact check this page
       </button>
-    </div>
+
+      {#if content}
+        <div class="result">
+          {@html content}
+        </div>
+      {/if}
   </main>
 </template>
 
