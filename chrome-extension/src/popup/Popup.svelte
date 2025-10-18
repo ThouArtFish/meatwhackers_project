@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { onMount } from 'svelte'
+
   const PYTHON_SERVER_URL = "http://localhost:8000";
 
   type HighlightType = "person" | "organization" | "date" | "evidence";
@@ -34,14 +36,10 @@
     //   })
     // })
 
-    // content = await res.text();
-
-    // highlight all paragraphs in the page of the current tab
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
     highlightParagraph([
       { text: "the", paragraphIndex: 0, type: "evidence" },
     ])
+    displayHeaderIcons(0.2);
   }
 
   // adds all highlights to a given paragraph (all highlights belong to the same paragraph)
@@ -97,6 +95,51 @@
         elements.forEach(el => paragraph.appendChild(el));
       },
       args: [highlights, highlightColors] // pass highlights as an argument
+    })
+  }
+
+  // returns correct icon depending on rating
+  function findTierImage(rating: number) {
+    switch (true) {
+      case rating < 0.1:
+        return "cap.svg";
+      case rating < 0.3:
+        return "sus.svg";
+      case rating < 0.5:
+        return "mid.svg";
+      default:
+        return "goated.svg";
+    }
+  }
+
+  async function displayHeaderIcons(rating: number) {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    const tierImage = findTierImage(rating);
+    const imageSrc = chrome.runtime.getURL(`icons/${tierImage}`);
+
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id! },
+      func: (imageSrc: string) => {
+        // Heading icons
+        let mainHeading = document.getElementById("main-heading");
+        console.log("Main heading:", mainHeading);
+        if (!mainHeading) return;
+
+        const image = document.createElement("img");
+        image.src = imageSrc;
+        image.style.width = "2rem";
+        image.style.height = "2rem";
+        image.style.borderRadius = "0.25rem";
+
+        mainHeading.insertAdjacentElement("afterend", image);
+
+        // // Top page summary box
+        // let summary = document.createElement("p");
+        // summary.id = "summary";
+        // mainHeading.insertAdjacentElement("beforebegin", summary);
+      },
+      args: [imageSrc]
     })
   }
 </script>
