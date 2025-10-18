@@ -2,6 +2,8 @@ from fastapi import FastAPI, Query
 import uvicorn
 import webscraper
 import early_algorithm
+from gemini_flask import GeminiResponse
+
 
 app = FastAPI()
 
@@ -34,9 +36,6 @@ def fact_check_headlines():
     # Return automatically as JSON
     return {headline_scores}
 
-
-
-    
     
 
 @app.get("/factcheck_article")
@@ -59,6 +58,13 @@ def fact_check_article(url: str = Query(..., description="BBC article URL")):
             {"title": t, "link": l} for t, l in related_articles
     ] if related_articles else []
 
+    GPT = GeminiResponse()
+    response = GPT.generateResponse(f"""You are now an elite economist who has centered their career around helping ordinary people invest and make smart market decisions. I am a young person who is interested in investing their money to be more financially secure. I have read the following article and I need you to do the following:
+                                    1. Read the article and give bullet points with one or two sentences about what bojectively happens in the article and what changes in terms of markets, companies stock and more.
+                                    2. Give 4 things on markets or investments that you would recommend to readers after reading this article for economic success. Your respons should be no longer than 20 lines. This is the file below:
+                                    {text}""")
+    response = response.candidates[0].content.parts[0].text
+
     # Return everything as JSON
     return {
         "title": title,
@@ -69,7 +75,8 @@ def fact_check_article(url: str = Query(..., description="BBC article URL")):
         "polarity": polarity,
         "evidence": evidence,
         "total": total,
-        "related_articles": related_articles_json
+        "related_articles": related_articles_json,
+        "response": response
     }
 
 if __name__ == "__main__":
