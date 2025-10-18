@@ -2,7 +2,7 @@ import spacy
 from transformers import pipeline
 from textblob import TextBlob
 
-
+#yes
 def MainScore(ntext):
 
     # Load a model that can classify witho
