@@ -37,6 +37,17 @@ class Article:
 
     def __repr__(self):
         return f"<Article title='{self.title}' link='{self.link}'>"
+    
+
+class Paragraph:
+    """Data class for storing paragraph details."""
+    
+    def __init__(self, text, index):
+        self.text = text
+        self.index = index
+
+    def __repr__(self):
+        return f"<Paragraph position={self.position} text='{self.text[:30]}...'>"
 
 
 class BBCBusinessScraper(BaseScraper):
@@ -119,12 +130,18 @@ class BBCArticleScraper(BaseScraper):
         heading = self.soup.find("h1", id="main-heading")
         return heading.get_text(strip=True) if heading else None
     
-    def get_text_content(self):
-        """Fetch the full text from a given article page."""
-        # Typical BBC article paragraphs
+    def get_paragraphs(self):
         paragraphs = self.soup.select("main p")
-        text = " ".join(p.get_text(strip=True) for p in paragraphs)
-        return text
+        para_list = []
+        for index, p in enumerate(paragraphs):
+            text = p.get_text(strip=True)
+            para_list.append(Paragraph(text, index))
+        return para_list
+
+    def get_text_content(self):
+        paragraphs = self.get_paragraphs()
+        full_text = " ".join(p.text for p in paragraphs)
+        return full_text
     
     def get_journalist(self):
         journalist = self.soup.find("span",class_="ssrcss-vd0pba-TextContributorName epw3ir01")

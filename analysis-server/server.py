@@ -1,28 +1,31 @@
 from fastapi import FastAPI, Query
 import uvicorn
 import webscraper
+<<<<<<< HEAD
 import early_algorithm2
+=======
+>>>>>>> 401c27cae04d6bb3d93b34f14cd4e696860c49a2
 from gemini_flask import GeminiResponse
+
+from early_algorithm2 import MainScore
 
 
 app = FastAPI()
 
 
-
-@app.get("/")
-def root():
-    return {"message": "You have reached the API."}
-
-
-@app.get("/factcheck_headlines")
+@app.post("/factcheck_headlines")
 def fact_check_headlines():
     scraper = webscraper.BBCBusinessScraper()
     headlines = scraper.fetch_headlines()
     
     headline_scores = []
     for headline in headlines[:10]:
+<<<<<<< HEAD
         text = scraper.fetch_article_text(headline)
         subjectivity, polarity, evidence, total = early_algorithm2.MainScore(text)
+=======
+        subjectivity, polarity, evidence, total = MainScore(scraper)
+>>>>>>> 401c27cae04d6bb3d93b34f14cd4e696860c49a2
 
         headline_scores.append({
             "title": headline.title,
@@ -32,24 +35,20 @@ def fact_check_headlines():
             "evidence": evidence,
             "total": total
         })
-    print(headline_scores)
     # Return automatically as JSON
-    return {headline_scores}
+    return headline_scores
 
     
 
-@app.get("/factcheck_article")
+@app.post("/factcheck_article")
 def fact_check_article(url: str = Query(..., description="BBC article URL")):
     # Initialize the scraper with the given article URL
     scraper = webscraper.BBCArticleScraper(url)
 
     # Get article details
     title = scraper.get_heading()
-    text = scraper.get_text_content()
     journalist_info = scraper.get_journalist()
     related_articles = scraper.get_related_articles()
-    if not text:
-        return {"error": "Could not fetch article text."}
 
     # Run your scoring algorithm
     subjectivity, polarity, evidence, total, highlighted_sentences, highlighted_words = early_algorithm2.TextAnalyzer(text).report()
@@ -62,7 +61,7 @@ def fact_check_article(url: str = Query(..., description="BBC article URL")):
     response = GPT.generateResponse(f"""You are now an elite economist who has centered their career around helping ordinary people invest and make smart market decisions. I am a young person who is interested in investing their money to be more financially secure. I have read the following article and I need you to do the following:
                                     1. Read the article and give bullet points with one or two sentences about what bojectively happens in the article and what changes in terms of markets, companies stock and more.
                                     2. Give 4 things on markets or investments that you would recommend to readers after reading this article for economic success. Your respons should be no longer than 20 lines. This is the file below:
-                                    {text} You should be serious and concise, no unnecessary speech We also have an index from -1 to 1 to determine if this is a reliable news story media wise. a story is considered good if its total rating is more than 0.1. If the rating is too low for you to honestly give advice money-wise, you can say to not invest as your advice. You should give reasons why. The rating for this story is {total}""")
+                                    {scraper.get_text_content()} You should be serious and concise, no unnecessary speech We also have an index from -1 to 1 to determine if this is a reliable news story media wise. a story is considered good if its total rating is more than 0.1. If the rating is too low for you to honestly give advice money-wise, you can say to not invest as your advice. You should give reasons why. The rating for this story is {total}""")
     response = response.candidates[0].content.parts[0].text
 
     # Return everything as JSON
