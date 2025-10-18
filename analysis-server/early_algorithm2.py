@@ -151,7 +151,7 @@ class TextAnalyzer:
 
         total = max(min(total, 1), -1)
 
-        return subjectivity, polarity, evidence, total, highlighted_sentences, highlighted_words
+        return subjectivity, polarity, evidence, round(total, 2), highlighted_sentences, highlighted_words
 #ss
 #sadasdas
 if __name__ == '__main__':
