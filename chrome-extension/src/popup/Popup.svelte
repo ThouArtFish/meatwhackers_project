@@ -85,7 +85,8 @@
 
         // Append any remaining text after the last highlight
         const lastEnd = splitPoints.length > 0 ? splitPoints[splitPoints.length - 1] : 0;
-        const remainingText = paragraph.textContent!.substring(lastEnd);
+        const
+         remainingText = paragraph.textContent!.substring(lastEnd);
         if (remainingText) {
           const textNode = document.createTextNode(remainingText);
           elements.push(textNode as unknown as HTMLElement);
@@ -101,11 +102,11 @@
   // returns correct icon depending on rating
   function findTierImage(rating: number) {
     switch (true) {
-      case rating < 0.1:
+      case rating < -0.4:
         return "cap.svg";
-      case rating < 0.3:
+      case rating < -0.1:
         return "sus.svg";
-      case rating < 0.5:
+      case rating < 0.4:
         return "mid.svg";
       default:
         return "goated.svg";
