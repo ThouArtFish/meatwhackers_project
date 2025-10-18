@@ -48,7 +48,7 @@ def fact_check_article(url: str = Query(..., description="BBC article URL")):
 
     text = scraper.get_text_content()
     # Run your scoring algorithm
-    subjectivity, polarity, evidence, total, highlighted_sentences, highlighted_words = early_algorithm2.TextAnalyzer(text).report()
+    subjectivity, polarity, evidence, total, highlighted_sentences, highlighted_words = early_algorithm2.TextAnalyzer(text,journalist_info[1]).report()
     
     related_articles_json = [
             {"title": t, "link": l} for t, l in related_articles
