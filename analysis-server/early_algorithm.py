@@ -2,7 +2,7 @@ import spacy
 from transformers import pipeline
 from textblob import TextBlob
 import torch
-
+import math
 
 
 #yes
@@ -65,17 +65,16 @@ def MainScore(text):
 
     tokenize(text)
 
-    highlight_sentences = []
+    highlight_sentences = {"evidence": []}
 
     def HighlightSentence(sentence, result):
-
-        print("Hello")
-
         if result == 1:
-            highlight_sentences.append([sentence,'evidence'])
+            highlight_sentences["evidence"].append(sentence)
         
         elif result == -1:
-            highlight_sentences.append([sentence,'hearsay'])
+            highlight_sentences.setdefault("hearsay", []).append(sentence)
+      
+
     
 
     def EvidenceScore(phrase):
@@ -124,78 +123,89 @@ def MainScore(text):
    
     
 
-    def CalculateScore(subjectivity, scount, polarity, ecount, evidence):
-
-        subjectivity = subjectivity / scount
-        evidence = evi_scores / ecount
-        total = (subjectivity + polarity + evidence) / 3
-
-        return round(subjectivity,2) , round(polarity,2), round(evidence,2), round(total,2)
-
-
-    #This returns Subjectivity score, Polarity Score, Evidence score, and Total Score
-
     
+    def CalculateScore(subjectivity, scount, polarity, ecount, evidence):
+        # Average each
+        subjectivity = subjectivity / scount
+        evidence = evidence / ecount
+        polarity = max(min(polarity, 1), -1)  # clamp just in case
+
+        # --- Scale subjectivity from [0,1] → [-1,1]
+        subjectivity_scaled = (subjectivity * 2) - 1
+
+        # --- Evidence should already be roughly [-1,1], but clamp it safely
+        evidence_scaled = max(min(evidence, 1), -1)
+
+        # --- Compute weighted or simple average
+        total = (subjectivity_scaled + polarity + evidence_scaled) / 3
+
+        # --- Ensure total stays between -1 and 1
+        total = max(min(total, 1), -1)
+
+        # Round values for readability
+        return (
+            round(subjectivity_scaled, 2),
+            round(polarity, 2),
+            round(evidence_scaled, 2),
+            round(total, 2)
+        )
+        #This returns Subjectivity score, Polarity Score, Evidence score, and Total Score
+
+        
 
 
     def HighlightWord():
-
-        person = []
-        org = []
-        gpe = []
-        date = []
-        time = []
-        money = []
-        percent = []
-        cardinal = []
-        law = []
-        event = []
+        categories = {
+            "person": [],
+            "org": [],
+            "gpe": [],
+            "date": [],
+            "time": [],
+            "money": [],
+            "percent": [],
+            "cardinal": [],
+            "law": [],
+            "event": [],
+        }
 
         for ent in doc.ents:
-                # People
-            if ent.label_ == "PERSON":
-                person.append(ent.text)
+            label = ent.label_
 
-            # Companies & Organizations  
-            if ent.label_ == "ORG":
-                org.append(ent.text)
-               
+            if label == "PERSON":
+                categories["person"].append(ent.text)
 
-            # Locations (Countries, cities, states)
-            if ent.label_ == "GPE":
-                gpe.append(ent.text)
+            elif label == "ORG":
+                categories["org"].append(ent.text)
 
-            # Dates
-            if ent.label_ == "DATE":
+            elif label == "GPE":
+                categories["gpe"].append(ent.text)
+
+            elif label == "DATE":
                 if (any(char.isdigit() for char in ent.text) or ent.text.lower() in months) and len(ent.text) > 2:
-                    date.append(ent.text)
+                    categories["date"].append(ent.text)
 
-            # Times  
-            if ent.label_ == "TIME":
-                time.append(ent.text)
+            elif label == "TIME":
+                categories["time"].append(ent.text)
 
-            # Monetary amounts
-            if ent.label_ == "MONEY":
-                money.append(ent.text)
+            elif label == "MONEY":
+                categories["money"].append(ent.text)
 
-            # Percentages
-            if ent.label_ == "PERCENT":
-                percent.append(ent.text)
+            elif label == "PERCENT":
+                categories["percent"].append(ent.text)
 
-            # Numbers
-            if ent.label_ == "CARDINAL":
-                cardinal.append(ent.text)
+            elif label == "CARDINAL":
+                categories["cardinal"].append(ent.text)
 
-            # Laws/Legal documents (limited)
-            if ent.label_ == "LAW":
-                law.append(ent.text)
+            elif label == "LAW":
+                categories["law"].append(ent.text)
 
-            # Events
-            if ent.label_ == "EVENT":
-                event.append(ent.text)
+            elif label == "EVENT":
+                categories["event"].append(ent.text)
 
-            
-        return person, org, gpe, date, time, money, percent, cardinal, law, event
+        # Convert lists to sets and remove empty ones
+        result = {k: set(v) for k, v in categories.items() if v}
+
+        return result
         
     def Highlighted():
 
