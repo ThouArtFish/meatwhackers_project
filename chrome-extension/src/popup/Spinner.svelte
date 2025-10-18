@@ -1,3 +1,5 @@
+<script lang="ts"></script>
+
 <!-- A simple spinner component -->
 <!-- A circle (dot) in the center and a larger stroked circle around -->
 <!-- Then a semicirle that rotates around the center circle like a radar -->
