@@ -1,7 +1,7 @@
 import fastapi
 import uvicorn
 import webscraper
-import EarlyAlogirthm
+import early_algorithm
 
 app = fastapi.FastAPI()
 
@@ -20,7 +20,7 @@ def fact_check_headlines():
     headline_scores = []
     for headline in headlines:
         text = scraper.fetch_article_text(headline)
-        subjectivity, polarity, evidence, total = EarlyAlogirthm.MainScore(text)
+        subjectivity, polarity, evidence, total = early_algorithm.MainScore(text)
 
         headline_scores.append({
             "title": headline.title,
@@ -42,7 +42,7 @@ def fact_check_headlines():
 @app.post("/factcheck_article")
 def fact_check_article():
 
-    subjectivity,polarity,evidence,total = EarlyAlogirthm.MainScore(text)
+    subjectivity,polarity,evidence,total = early_algorithm.MainScore(text)
     return {
         
     }
