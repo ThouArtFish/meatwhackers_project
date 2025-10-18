@@ -6,7 +6,7 @@ import torch
 
 
 #yes
-def MainScore(text):
+def MainScore(ntext):
 
     #Intialise classifer for evidence categories
     classifier = pipeline("zero-shot-classification",
@@ -29,7 +29,7 @@ def MainScore(text):
 
 
 
-    
+    text = ntext
 
     doc = nlp(text)
     phrases = []
@@ -204,9 +204,10 @@ def MainScore(text):
     
     
 
-    return CalculateScore(sub_scores, sub_count, polarity(text),evi_count, evi_scores), Highlighted()
+    return CalculateScore(sub_scores, sub_count, polarity(text),evi_count, evi_scores)
 
         
+
 
 if __name__ == '__main__':
     print(MainScore('''The brother of Virginia Giuffre has called on King Charles to strip Prince Andrew of the title "prince" after he announced he is giving up his other titles, including the Duke of York.

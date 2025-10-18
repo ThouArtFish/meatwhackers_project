@@ -52,8 +52,8 @@ def fact_check_article(url: str = Query(..., description="BBC article URL")):
         return {"error": "Could not fetch article text."}
 
     # Run your scoring algorithm
-    subjectivity, polarity, evidence, total = early_algorithm.MainScore(text)
-
+    subjectivity, polarity, evidence, total, highlighted_sentences, highlighted_words = early_algorithm.MainScore(text)
+    
     related_articles_json = [
             {"title": t, "link": l} for t, l in related_articles
     ] if related_articles else []
@@ -62,7 +62,7 @@ def fact_check_article(url: str = Query(..., description="BBC article URL")):
     response = GPT.generateResponse(f"""You are now an elite economist who has centered their career around helping ordinary people invest and make smart market decisions. I am a young person who is interested in investing their money to be more financially secure. I have read the following article and I need you to do the following:
                                     1. Read the article and give bullet points with one or two sentences about what bojectively happens in the article and what changes in terms of markets, companies stock and more.
                                     2. Give 4 things on markets or investments that you would recommend to readers after reading this article for economic success. Your respons should be no longer than 20 lines. This is the file below:
-                                    {text}""")
+                                    {text} You should be serious and concise, no unnecessary speech We also have an index from -1 to 1 to determine if this is a reliable news story media wise. a story is considered good if its total rating is more than 0.1. If the rating is too low for you to honestly give advice money-wise, you can say to not invest as your advice. You should give reasons why. The rating for this story is {total}""")
     response = response.candidates[0].content.parts[0].text
 
     # Return everything as JSON
@@ -75,6 +75,8 @@ def fact_check_article(url: str = Query(..., description="BBC article URL")):
         "polarity": polarity,
         "evidence": evidence,
         "total": total,
+        "highlighted_sentences": highlighted_sentences,
+        "highlighted_words": highlighted_words,
         "related_articles": related_articles_json,
         "response": response
     }

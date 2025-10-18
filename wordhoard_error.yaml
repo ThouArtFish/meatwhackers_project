@@ -1,0 +1,187 @@
+2025-10-18 18:15:11:wordhoard.utilities.request_html:INFO: --------------------------------------------------------------------------------
+2025-10-18 18:15:11:wordhoard.utilities.request_html:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:15:11:wordhoard.utilities.request_html:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/happy
+2025-10-18 18:15:11:wordhoard.utilities.request_html:INFO: --------------------------------------------------------------------------------
+2025-10-18 18:15:11:wordhoard.synonyms:ERROR: An error occurred in the following code segment:
+2025-10-18 18:15:11:wordhoard.synonyms:ERROR:   File "c:\Users\adamw\AppData\Local\Programs\Python\Python312\Lib\site-packages\wordhoard\synonyms.py", line 173, in part_of_speech_category_thesaurus_com
+    p_contents = list(para_tag.contents)
+                      ^^^^^^^^^^^^^^^^^
+
+2025-10-18 18:15:11:wordhoard.utilities.request_html:INFO: --------------------------------------------------------------------------------
+2025-10-18 18:15:11:wordhoard.utilities.request_html:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:15:11:wordhoard.utilities.request_html:INFO: Requested URL: http://wordnetweb.princeton.edu/perl/webwn?s=happy
+2025-10-18 18:15:11:wordhoard.utilities.request_html:INFO: --------------------------------------------------------------------------------
+2025-10-18 18:15:11:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:15:11:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/happy
+2025-10-18 18:15:11:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:15:14:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:15:14:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/happy
+2025-10-18 18:15:14:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:15:30:wordhoard.utilities.request_html:INFO: --------------------------------------------------------------------------------
+2025-10-18 18:15:30:wordhoard.utilities.request_html:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:15:30:wordhoard.utilities.request_html:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/happy
+2025-10-18 18:15:30:wordhoard.utilities.request_html:INFO: --------------------------------------------------------------------------------
+2025-10-18 18:15:30:wordhoard.utilities.request_html:INFO: --------------------------------------------------------------------------------
+2025-10-18 18:15:30:wordhoard.utilities.request_html:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:15:30:wordhoard.utilities.request_html:INFO: Requested URL: http://wordnetweb.princeton.edu/perl/webwn?s=happy
+2025-10-18 18:15:30:wordhoard.utilities.request_html:INFO: --------------------------------------------------------------------------------
+2025-10-18 18:15:30:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:15:30:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/happy
+2025-10-18 18:15:30:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:15:31:wordhoard.synonyms:ERROR: An error occurred in the following code segment:
+2025-10-18 18:15:31:wordhoard.synonyms:ERROR:   File "c:\Users\adamw\AppData\Local\Programs\Python\Python312\Lib\site-packages\wordhoard\synonyms.py", line 173, in part_of_speech_category_thesaurus_com
+    p_contents = list(para_tag.contents)
+                      ^^^^^^^^^^^^^^^^^
+
+2025-10-18 18:15:40:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:15:40:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/happy
+2025-10-18 18:15:40:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:15:46:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:15:46:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/happy
+2025-10-18 18:15:46:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:16:06:wordhoard.utilities.request_html:INFO: --------------------------------------------------------------------------------
+2025-10-18 18:16:06:wordhoard.utilities.request_html:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:16:06:wordhoard.utilities.request_html:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/happy
+2025-10-18 18:16:06:wordhoard.utilities.request_html:INFO: --------------------------------------------------------------------------------
+2025-10-18 18:16:07:wordhoard.synonyms:ERROR: An error occurred in the following code segment:
+2025-10-18 18:16:07:wordhoard.synonyms:ERROR:   File "c:\Users\adamw\AppData\Local\Programs\Python\Python312\Lib\site-packages\wordhoard\synonyms.py", line 173, in part_of_speech_category_thesaurus_com
+    p_contents = list(para_tag.contents)
+                      ^^^^^^^^^^^^^^^^^
+
+2025-10-18 18:16:07:wordhoard.utilities.request_html:INFO: --------------------------------------------------------------------------------
+2025-10-18 18:16:07:wordhoard.utilities.request_html:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:16:07:wordhoard.utilities.request_html:INFO: Requested URL: http://wordnetweb.princeton.edu/perl/webwn?s=happy
+2025-10-18 18:16:07:wordhoard.utilities.request_html:INFO: --------------------------------------------------------------------------------
+2025-10-18 18:16:07:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:16:07:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/happy
+2025-10-18 18:16:07:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:16:17:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:16:17:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/happy
+2025-10-18 18:16:17:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:16:22:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:16:22:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/happy
+2025-10-18 18:16:22:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:16:29:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:16:29:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/happy
+2025-10-18 18:16:29:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:16:30:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:16:30:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/happy
+2025-10-18 18:16:30:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:16:32:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:16:32:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/happy
+2025-10-18 18:16:32:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:16:39:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:16:39:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/happy
+2025-10-18 18:16:39:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:16:45:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:16:45:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/happy
+2025-10-18 18:16:45:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:17:00:wordhoard.utilities.request_html:INFO: --------------------------------------------------------------------------------
+2025-10-18 18:17:00:wordhoard.utilities.request_html:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:17:00:wordhoard.utilities.request_html:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:17:00:wordhoard.utilities.request_html:INFO: --------------------------------------------------------------------------------
+2025-10-18 18:17:00:wordhoard.synonyms:ERROR: An error occurred in the following code segment:
+2025-10-18 18:17:00:wordhoard.synonyms:ERROR:   File "c:\Users\adamw\AppData\Local\Programs\Python\Python312\Lib\site-packages\wordhoard\synonyms.py", line 173, in part_of_speech_category_thesaurus_com
+    p_contents = list(para_tag.contents)
+                      ^^^^^^^^^^^^^^^^^
+
+2025-10-18 18:17:01:wordhoard.utilities.request_html:INFO: --------------------------------------------------------------------------------
+2025-10-18 18:17:01:wordhoard.utilities.request_html:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:17:01:wordhoard.utilities.request_html:INFO: Requested URL: http://wordnetweb.princeton.edu/perl/webwn?s=mother
+2025-10-18 18:17:01:wordhoard.utilities.request_html:INFO: --------------------------------------------------------------------------------
+2025-10-18 18:17:01:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:17:01:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:17:01:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:17:04:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:17:04:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:17:04:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:17:08:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:17:08:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:17:08:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:17:12:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:17:12:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:17:12:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:17:20:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:17:20:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:17:20:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:17:30:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:17:30:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:17:30:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:17:34:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:17:34:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:17:34:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:17:41:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:17:41:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:17:41:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:17:45:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:17:45:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:17:45:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:17:54:wordhoard.utilities.request_html:INFO: --------------------------------------------------------------------------------
+2025-10-18 18:17:54:wordhoard.utilities.request_html:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:17:54:wordhoard.utilities.request_html:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:17:54:wordhoard.utilities.request_html:INFO: --------------------------------------------------------------------------------
+2025-10-18 18:17:54:wordhoard.synonyms:ERROR: An error occurred in the following code segment:
+2025-10-18 18:17:54:wordhoard.synonyms:ERROR:   File "c:\Users\adamw\AppData\Local\Programs\Python\Python312\Lib\site-packages\wordhoard\synonyms.py", line 173, in part_of_speech_category_thesaurus_com
+    p_contents = list(para_tag.contents)
+                      ^^^^^^^^^^^^^^^^^
+
+2025-10-18 18:17:54:wordhoard.utilities.request_html:INFO: --------------------------------------------------------------------------------
+2025-10-18 18:17:54:wordhoard.utilities.request_html:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:17:54:wordhoard.utilities.request_html:INFO: Requested URL: http://wordnetweb.princeton.edu/perl/webwn?s=mother
+2025-10-18 18:17:54:wordhoard.utilities.request_html:INFO: --------------------------------------------------------------------------------
+2025-10-18 18:17:55:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:17:55:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:17:55:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:18:03:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:18:03:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:18:03:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:18:12:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:18:12:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:18:12:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:18:13:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:18:13:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:18:13:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:19:43:wordhoard.utilities.request_html:INFO: --------------------------------------------------------------------------------
+2025-10-18 18:19:43:wordhoard.utilities.request_html:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:19:43:wordhoard.utilities.request_html:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:19:43:wordhoard.utilities.request_html:INFO: --------------------------------------------------------------------------------
+2025-10-18 18:19:43:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:19:43:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:19:43:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:19:45:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:19:45:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:19:45:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:19:51:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:19:51:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:19:51:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:19:58:wordhoard.utilities.request_html:INFO: --------------------------------------------------------------------------------
+2025-10-18 18:19:58:wordhoard.utilities.request_html:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:19:58:wordhoard.utilities.request_html:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:19:58:wordhoard.utilities.request_html:INFO: --------------------------------------------------------------------------------
+2025-10-18 18:19:59:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:19:59:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:19:59:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:20:03:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:20:03:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:20:03:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:20:14:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:20:14:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:20:14:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:20:21:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:20:21:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:20:21:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:20:27:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:20:27:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:20:27:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:20:31:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:20:31:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:20:31:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:20:35:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:20:35:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:20:35:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:20:37:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:20:37:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:20:37:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
+2025-10-18 18:20:41:wordhoard.utilities.cloudflare_bypass:INFO: The requested URL is protected by Cloudflare's DDoS mitigation service.
+2025-10-18 18:20:41:wordhoard.utilities.cloudflare_bypass:INFO: Requested URL: https://www.collinsdictionary.com/dictionary/english-thesaurus/mother
+2025-10-18 18:20:41:wordhoard.utilities.cloudflare_bypass:INFO: Status Code: 403
