@@ -51,13 +51,8 @@
     const gemeniResponse: string = data.response as string;
 
     highlightSentences(highlightedSentences);
-<<<<<<< HEAD
     displayHeaderIcons(totalRating, gemeniResponse);
-=======
-    displayHeaderIcons(totalRating);
-
     state = "completed";
->>>>>>> 0ae695c8c848eb5357b61d633d59d954d81dcaac
   }
 
   // people, names, businesses, dates, evidence
