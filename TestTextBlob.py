@@ -1,14 +1,8 @@
-from transformers import pipeline
+from textblob import TextBlob
 
-# Load a model that can classify without training
-classifier = pipeline("zero-shot-classification", 
-                      model="facebook/bart-large-mnli")
-# Define your categories
-categories = ["direct evidence", "inferred evidence", "hearsay evidence", "not applicable"]
 
-# Test it on any phrase
-phrases = [
-    '''Prince Andrew is giving up his titles, including the Duke of York, he has announced in a personal statement.
+
+text = '''Prince Andrew is giving up his titles, including the Duke of York, he has announced in a personal statement.
 
 He has been under increasing pressure over his links with sex offender Jeffrey Epstein, with calls for Buckingham Palace to take action against him.
 
@@ -37,10 +31,14 @@ His ex-wife will be known as Sarah Ferguson and no longer Duchess of York, but t
 The prince has faced a series of scandals over recent years, including a court case he settled with Virginia Giuffre, questions about his finances and his involvement with an alleged Chinese spy.
 
 There had been growing frustration in Buckingham Palace at the scandals that continued to surround the prince.'''
-]
-for phrase in phrases:
-    result = classifier(phrase, categories)
-    print(f"'{phrase}' → {result['labels'][0]} ({result['scores'][0]:.2f})")
 
 
+blob = TextBlob(text)
 
+
+sentiment = blob.sentiment
+
+
+print(sentiment.polarity)
+
+print(sentiment.subjectivity)

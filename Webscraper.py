@@ -113,6 +113,9 @@ if __name__ == "__main__":
     # Example: Fetch the full text for the first article
     if headlines:
         article_text = scraper.fetch_article_text(headlines[0])
-        print("\nFirst article text snippet:\n", article_text[:500])
+        print("\nFirst article text snippet:\n", article_text[:700])
         journalist_text = scraper.get_journalist(headlines[0])
         print(journalist_text)
+
+
+
