@@ -32,7 +32,7 @@ def fact_check_headlines():
         })
     print(headline_scores)
     # Return automatically as JSON
-    return {"results": headline_scores}
+    return {headline_scores}
 
 
 
@@ -48,13 +48,18 @@ def fact_check_article(url: str = Query(..., description="BBC article URL")):
     title = scraper.get_heading()
     text = scraper.get_text_content()
     journalist_info = scraper.get_journalist()
-
+    related_articles = scraper.get_related_articles()
     if not text:
         return {"error": "Could not fetch article text."}
 
     # Run your scoring algorithm
     subjectivity, polarity, evidence, total = early_algorithm.MainScore(text)
 
+    related_articles_json = [
+            {"title": t, "link": l} for t, l in related_articles
+    ] if related_articles else []
+
+    # Return everything as JSON
     return {
         "title": title,
         "url": url,
@@ -63,7 +68,8 @@ def fact_check_article(url: str = Query(..., description="BBC article URL")):
         "subjectivity": subjectivity,
         "polarity": polarity,
         "evidence": evidence,
-        "total": total
+        "total": total,
+        "related_articles": related_articles_json
     }
 
 if __name__ == "__main__":
