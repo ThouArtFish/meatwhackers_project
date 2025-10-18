@@ -42,6 +42,7 @@ class BBCBusinessScraper(BaseScraper):
     def __init__(self, base_url="https://www.bbc.co.uk/news/business"):
         super().__init__(base_url)
         self.headlines = []
+        self.related_articles = []
 
     def fetch_headlines(self):
         """Scrape headlines and links from the BBC Business page."""
@@ -106,7 +107,25 @@ class BBCBusinessScraper(BaseScraper):
             self.fetch_article_text(article)
             self.get_journalist(article)
         return articles
-    
+
+    def compare_to_times(self,article):
+        newsURL = f"https://www.bing.com/news/search?q={article.title}"
+        newsPage = requests.get(newsURL)
+        newsSoup = BeautifulSoup(newsPage.text,'html.parser')
+        cards = newsSoup.find_all("div", class_="news-card-body card-with-cluster")
+
+        for card in cards[:3]:
+            a_tag = card.find("a", class_="title")
+            if a_tag:
+                h2_tag = a_tag.find("h2")
+                if h2_tag:
+                    headline = h2_tag.get_text(strip=True)
+                    link = a_tag.get("href")
+                    print(headline + link)
+                    self.related_articles.append((headline,link))
+        return self.related_articles
+                
+
 
 if __name__ == "__main__":
     scraper = BBCBusinessScraper()
@@ -118,6 +137,8 @@ if __name__ == "__main__":
     # Example: Fetch the full text for the first article
     if headlines:
         article_text = scraper.fetch_article_text(headlines[0])
-        print("\nFirst article text snippet:\n", article_text[:500])
+        print("\nFirst article text snippet:\n", article_text[:700])
         journalist_text = scraper.get_journalist(headlines[0])
         print(journalist_text)
+        related_articles = scraper.compare_to_times(headlines[0])
+        print(related_articles)
