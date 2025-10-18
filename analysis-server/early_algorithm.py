@@ -4,9 +4,12 @@ from textblob import TextBlob
 import torch
 import math
 
+from webscraper import Paragraph, BBCArticleScraper
+
 
 #yes
-def MainScore(text):
+def MainScore(scraper: BBCArticleScraper):
+    text = scraper.get_text_content()
 
     #Intialise classifer for evidence categories
     classifier = pipeline("zero-shot-classification",

@@ -2,9 +2,12 @@ import spacy
 from transformers import pipeline
 from textblob import TextBlob
 import torch
-import math
 
-def MainScore(text):
+from webscraper import BBCArticleScraper
+
+def MainScore(scraper: BBCArticleScraper):
+    text = scraper.get_text_content()
+
     # Initialise classifier for evidence categories
     classifier = pipeline("zero-shot-classification",
                      model="typeform/distilbert-base-uncased-mnli",
@@ -30,9 +33,9 @@ def MainScore(text):
 
     def HighlightSentence(sentence, result):
         if result == 1:
-            highlight_sentences.append({"sentence": sentence, "type": "evidence"})
+            highlight_sentences.append({"text": sentence, "type": "evidence"})
         elif result == -1:
-            highlight_sentences.append({"sentence": sentence, "type": "hearsay"})
+            highlight_sentences.append({"text": sentence, "type": "hearsay"})
 
     def EvidenceScore(phrase):
         result = classifier(phrase, categories)
@@ -81,6 +84,3 @@ def MainScore(text):
     }
 
     return result
-
-if __name__ == '__main__':
-    MainScore
