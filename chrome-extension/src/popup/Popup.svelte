@@ -5,9 +5,10 @@
 
   type Highlight = {
     text: string;
-    paragraphIndex: number;
     type: HighlightType;
   }
+
+  type FactCheckState = "ready" | "factChecking" | "completed";
 
   const highlightColors: Record<HighlightType, string> = {
     person: "rgba(255, 0, 0, 0.5)",
@@ -16,28 +17,46 @@
     evidence: "rgba(255, 255, 0, 0.5)"
   }
 
-  let content: string | null = null;
+  let state: FactCheckState = "ready";
 
   // fact checks the current page the user has open
   // sends a request to the python server
   // the python server returns the names of articles and the fact check results
   async function factCheck() {
+    if (state !== "ready") return; // prevent multiple clicks
+    state = "factChecking";
+
     console.log("Fact checking the current page...");
 
-    const res = await fetch(`${PYTHON_SERVER_URL}/factcheck_article?url=${encodeURIComponent(window.location.href)}`, {
-      method: "POST"
-    })
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-    console.log("Received response from server:", await res.text());
+    let res;
+    try {
+      res = await fetch(`${PYTHON_SERVER_URL}/factcheck_article?url=${encodeURIComponent(tab.url!)}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json"
+      }
+      });
+    } catch (error) {
+      console.error("Error fetching from Python server:", error);
+      state = "ready";
+      return;
+    }
 
-    highlightParagraph([
-      { text: "the", paragraphIndex: 0, type: "evidence" },
-    ])
+    const data = await res.json();
+
+    const highlightedSentences: Highlight[] = data.highlighted_sentences as Highlight[];
+    const totalRating: number = data.total as number;
+
+    highlightSentences(highlightedSentences);
+    displayHeaderIcons(totalRating);
+
+    state = "completed";
   }
 
-  // adds all highlights to a given paragraph (all highlights belong to the same paragraph)
   // people, names, businesses, dates, evidence
-  async function highlightParagraph(highlights: Highlight[]) {
+  async function highlightSentences(highlights: Highlight[]) {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
     chrome.scripting.executeScript({
@@ -46,47 +65,49 @@
         console.log("Highlighting paragraph with highlights:", highlights);
 
         const paragraphs = document.getElementsByTagName("p");
-        const paragraph = paragraphs[highlights[0].paragraphIndex];
-        const elements: HTMLElement[] = []
-        const splitPoints: number[] = [];
-        highlights.forEach((highlight) => {
-          const startIndex = paragraph.textContent!.indexOf(highlight.text);
-          if (startIndex !== -1) {
-            splitPoints.push(startIndex, startIndex + highlight.text.length);
+        for (const paragraph of paragraphs) {
+          const elements: HTMLElement[] = []
+          const splitPoints: number[] = [];
+
+          highlights.forEach((highlight) => {
+            const startIndex = paragraph.textContent!.indexOf(highlight.text);
+            if (startIndex !== -1) {
+              splitPoints.push(startIndex, startIndex + highlight.text.length);
+            }
+          });
+          
+          for (let i = 0; i < splitPoints.length; i += 2) {
+            const start = splitPoints[i];
+            const end = splitPoints[i + 1];
+            const textBefore = paragraph.textContent!.substring(i === 0 ? 0 : splitPoints[i - 1], start);
+            if (textBefore) {
+              const textNode = document.createTextNode(textBefore);
+              elements.push(textNode as unknown as HTMLElement);
+            }
+            const highlight = highlights.find(h => paragraph.textContent!.substring(start, end) === h.text)!;
+            const span = document.createElement("span");
+            span.textContent = highlight.text;
+            span.style.backgroundColor = highlightColors[highlight.type];
+            span.style.cursor = "pointer";
+            span.onclick = () => {
+              alert(`Highlight: ${highlight.text}`);
+            }
+            
+            elements.push(span);
           }
-        });
-        
-        for (let i = 0; i < splitPoints.length; i += 2) {
-          const start = splitPoints[i];
-          const end = splitPoints[i + 1];
-          const textBefore = paragraph.textContent!.substring(i === 0 ? 0 : splitPoints[i - 1], start);
-          if (textBefore) {
-            const textNode = document.createTextNode(textBefore);
+
+
+          // Append any remaining text after the last highlight
+          const lastEnd = splitPoints.length > 0 ? splitPoints[splitPoints.length - 1] : 0;
+          const remainingText = paragraph.textContent!.substring(lastEnd);
+          if (remainingText) {
+            const textNode = document.createTextNode(remainingText);
             elements.push(textNode as unknown as HTMLElement);
           }
-          const highlight = highlights.find(h => paragraph.textContent!.substring(start, end) === h.text)!;
-          const span = document.createElement("span");
-          span.textContent = highlight.text;
-          span.style.backgroundColor = highlightColors[highlight.type];
-          span.style.cursor = "pointer";
-          span.onclick = () => {
-            alert(`Highlight: ${highlight.text}`);
-          }
-          
-          elements.push(span);
-        }
 
-        // Append any remaining text after the last highlight
-        const lastEnd = splitPoints.length > 0 ? splitPoints[splitPoints.length - 1] : 0;
-        const
-         remainingText = paragraph.textContent!.substring(lastEnd);
-        if (remainingText) {
-          const textNode = document.createTextNode(remainingText);
-          elements.push(textNode as unknown as HTMLElement);
+          paragraph.innerHTML = ""; // Clear existing content
+          elements.forEach(el => paragraph.appendChild(el));
         }
-
-        paragraph.innerHTML = ""; // Clear existing content
-        elements.forEach(el => paragraph.appendChild(el));
       },
       args: [highlights, highlightColors] // pass highlights as an argument
     })
@@ -140,14 +161,14 @@
 
 <img src="src/assets/logo.svg" alt="Logo" />
 
-<button on:click={factCheck}>
-  Fact check this page
-</button>
-
-{#if content}
-  <div class="result">
-    {@html content}
-  </div>
+{#if state === "factChecking"}
+  <p>Fact checking in progress...</p>
+{:else if state === "completed"}
+  <p>Fact check complete!</p>
+{:else}
+  <button on:click={factCheck}>
+    Fact check this page
+  </button>
 {/if}
 
 <a href="about.html" target="_blank">Click here to learn more</a>
@@ -178,6 +199,7 @@
   }
 
   button {
+    transition: background-color 0.2s ease;
     background-color: rgba(255, 255, 255, 0.25);
     border-radius: 999px;
     outline-width: 1px;
@@ -186,5 +208,10 @@
     border-style: none;
     padding-inline: 1rem;
     padding-block: 0.5rem;
+  }
+  
+  button:hover {
+    transition: background-color 0.2s ease;
+    background-color: rgba(255, 255, 255, 0.35);
   }
 </style>
