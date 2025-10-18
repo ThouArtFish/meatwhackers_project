@@ -106,7 +106,7 @@ class BBCBusinessScraper(BaseScraper):
             self.fetch_article_text(article)
             self.get_journalist(article)
         return articles
-
+    
 
 if __name__ == "__main__":
     scraper = BBCBusinessScraper()
