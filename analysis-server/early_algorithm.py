@@ -8,8 +8,7 @@ import torch
 #yes
 def MainScore(ntext):
 
-    # Load a model that can classify witho
-    # ut training
+    #Intialise classifer for evidence categories
     classifier = pipeline("zero-shot-classification",
                      model="typeform/distilbert-base-uncased-mnli",
                      device=0 if torch.cuda.is_available() else -1,
@@ -24,7 +23,7 @@ def MainScore(ntext):
 
 
 
-    nlp = spacy.load("en_core_web_sm")
+    nlp = spacy.load("en_core_web_lg")
 
     text = ntext
 
@@ -93,10 +92,19 @@ def MainScore(ntext):
         evi_scores += EvidenceScore(phrase)
         evi_count += 1
 
+    rated_sentences = []
+
+    
+    def LineScore(sentence):
+        return [sentence, subjectivity(sentence), EvidenceScore(sentence)]
         
+            
+    
+    for phrase in phrases:
+        print(LineScore(phrase))
 
-
-
+    
+    
 
     def CalculateScore(subjectivity, scount, polarity, ecount, evidence):
 
