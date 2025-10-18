@@ -202,9 +202,9 @@ def MainScore(text):
         return highlight_sentences, HighlightWord()
     
     
-    
+    # subjectivity, polarity, evidence, total, highlighted_sentences, highlighted_words
 
-    return CalculateScore(sub_scores, sub_count, polarity(text),evi_count, evi_scores), Highlighted()
+    return (*CalculateScore(sub_scores, sub_count, polarity(text),evi_count, evi_scores), *Highlighted())
 
         
 
