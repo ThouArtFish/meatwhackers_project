@@ -43,7 +43,7 @@ for ent in doc.ents:
 
     # Dates
     if ent.label_ == "DATE":
-        if any(char.isdigit() for char in ent.text) or ent.text.lower() in months:
+        if (any(char.isdigit() for char in ent.text) or ent.text.lower() in months) and len(ent.text) > 2:
             print(f"Specific date: {ent.text}")
         
 
