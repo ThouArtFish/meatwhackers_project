@@ -30,7 +30,8 @@ class TextAnalyzer:
                        'august', 'september', 'october', 'november', 'december',
                        'jan', 'feb', 'mar', 'apr', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'}
 
-
+    def empty(function):
+        pass
     def polarity(self, sentence):
         return TextBlob(sentence).polarity
 
@@ -121,8 +122,8 @@ class TextAnalyzer:
         highlighted_sentences = self.highlight_sentences
         highlighted_words = self.highlight_words()
         return subjectivity, polarity, evidence, total, {"highlighted_sentences": highlighted_sentences}, {"highlighted_words": highlighted_words}
-
-
+#ss
+#sadasdas
 if __name__ == '__main__':
     text = ''''The brother of Virginia Giuffre has called on King Charles to strip Prince Andrew of the title "prince" after he announced he is giving up his other titles, including the Duke of York.
 
