@@ -30,13 +30,12 @@ class TextAnalyzer:
                        'august', 'september', 'october', 'november', 'december',
                        'jan', 'feb', 'mar', 'apr', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'}
 
-    # --- Text Metrics ---
-    @staticmethod
-    def polarity(sentence):
+
+    def polarity(self, sentence):
         return TextBlob(sentence).polarity
 
-    @staticmethod
-    def subjectivity(sentence):
+
+    def subjectivity(self, sentence):
         return TextBlob(sentence).subjectivity
 
     # --- Evidence Scoring ---
@@ -107,26 +106,21 @@ class TextAnalyzer:
         evi_count = len(self.phrases)
         polarity_score = TextBlob(self.text).polarity
 
-        # Scale subjectivity to [-1,1]
+      
         subjectivity_scaled = (sub_scores / sub_count * 2) - 1
         evidence_scaled = max(min(evi_scores / evi_count, 1), -1)
         polarity_score = max(min(polarity_score, 1), -1)
 
         total = max(min((subjectivity_scaled + polarity_score + evidence_scaled) / 3, 1), -1)
 
-        return {
-            "subjectivity": round(subjectivity_scaled, 2),
-            "polarity": round(polarity_score, 2),
-            "evidence": round(evidence_scaled, 2),
-            "total": round(total, 2)
-        }
+        return round(subjectivity_scaled, 2), round(polarity_score, 2), round(evidence_scaled, 2), round(total, 2)
 
     # --- Main Report ---
     def report(self):
-        score = self.calculate_score()
+        subjectivity, polarity, evidence, total = self.calculate_score()
         highlighted_sentences = self.highlight_sentences
         highlighted_words = self.highlight_words()
-        return {**score, "highlighted_sentences": highlighted_sentences, "highlighted_words": highlighted_words}
+        return subjectivity, polarity, evidence, total, {"highlighted_sentences": highlighted_sentences}, {"highlighted_words": highlighted_words}
 
 
 if __name__ == '__main__':
@@ -151,5 +145,5 @@ if __name__ == '__main__':
     When Prince Andrew was born in 1960, he was automatically a prince as the son of a monarch. This could only be changed if a Letters Patent was issued by the King. '''
     
     analyzer = TextAnalyzer(text)
-    result = analyzer.report()
-    print(result)
+    S,P,E,T,HS,HW= analyzer.report()
+    print(S,P,E,T,HS,HW)
