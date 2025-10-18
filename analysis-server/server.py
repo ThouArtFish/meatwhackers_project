@@ -1,18 +1,17 @@
 from fastapi import FastAPI, Query
 import uvicorn
 import webscraper
-import early_algorithm
+import early_algorithm2
 from gemini_flask import GeminiResponse
+
+
 
 
 app = FastAPI()
 
-
-
 @app.get("/")
 def root():
-    return {"message": "You have reached the API."}
-
+    return {"message": "welcome to the API"}
 
 @app.get("/factcheck_headlines")
 def fact_check_headlines():
@@ -22,7 +21,7 @@ def fact_check_headlines():
     headline_scores = []
     for headline in headlines[:10]:
         text = scraper.fetch_article_text(headline)
-        subjectivity, polarity, evidence, total = early_algorithm.MainScore(text)
+        subjectivity, polarity, evidence, total,useless,useless2 = early_algorithm2.TextAnalyzer(text).report()
 
         headline_scores.append({
             "title": headline.title,
@@ -32,9 +31,8 @@ def fact_check_headlines():
             "evidence": evidence,
             "total": total
         })
-    print(headline_scores)
     # Return automatically as JSON
-    return {headline_scores}
+    return headline_scores
 
     
 
@@ -45,14 +43,12 @@ def fact_check_article(url: str = Query(..., description="BBC article URL")):
 
     # Get article details
     title = scraper.get_heading()
-    text = scraper.get_text_content()
     journalist_info = scraper.get_journalist()
     related_articles = scraper.get_related_articles()
-    if not text:
-        return {"error": "Could not fetch article text."}
 
+    text = scraper.get_text_content()
     # Run your scoring algorithm
-    subjectivity, polarity, evidence, total, highlighted_sentences, highlighted_words = early_algorithm.MainScore(text)
+    subjectivity, polarity, evidence, total, highlighted_sentences, highlighted_words = early_algorithm2.TextAnalyzer(text).report()
     
     related_articles_json = [
             {"title": t, "link": l} for t, l in related_articles

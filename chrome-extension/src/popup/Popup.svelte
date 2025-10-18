@@ -24,20 +24,11 @@
   async function factCheck() {
     console.log("Fact checking the current page...");
 
-    // const res = await fetch(`${PYTHON_SERVER_URL}/factcheck`, {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json"
-    //   },
-    //   body: JSON.stringify({
-    //     url: window.location.href
-    //   })
-    // })
+    const res = await fetch(`${PYTHON_SERVER_URL}/factcheck_article?url=${encodeURIComponent(window.location.href)}`, {
+      method: "POST"
+    })
 
-    // content = await res.text();
-
-    // highlight all paragraphs in the page of the current tab
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    console.log("Received response from server:", await res.text());
 
     highlightParagraph([
       { text: "the", paragraphIndex: 0, type: "evidence" },
