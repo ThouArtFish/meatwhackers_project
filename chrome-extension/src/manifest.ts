@@ -37,7 +37,7 @@ export default defineManifest({
         "img/logo-48.png",
         "img/logo-128.png",
       ],
-      matches: ["<all_urls>"],
+      matches: [],
     },
   ],
   permissions: ["storage", "scripting", "activeTab"],

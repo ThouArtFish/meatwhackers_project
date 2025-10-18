@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
-
   const PYTHON_SERVER_URL = "http://localhost:8000";
 
   type HighlightType = "person" | "organization" | "date" | "evidence";
@@ -36,10 +34,14 @@
     //   })
     // })
 
+    // content = await res.text();
+
+    // highlight all paragraphs in the page of the current tab
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
     highlightParagraph([
       { text: "the", paragraphIndex: 0, type: "evidence" },
     ])
-    displayHeaderIcons(0.2);
   }
 
   // adds all highlights to a given paragraph (all highlights belong to the same paragraph)
@@ -102,11 +104,11 @@
   // returns correct icon depending on rating
   function findTierImage(rating: number) {
     switch (true) {
-      case rating < -0.4:
+      case rating < 0.1:
         return "cap.svg";
-      case rating < -0.1:
+      case rating < 0.3:
         return "sus.svg";
-      case rating < 0.4:
+      case rating < 0.5:
         return "mid.svg";
       default:
         return "goated.svg";
