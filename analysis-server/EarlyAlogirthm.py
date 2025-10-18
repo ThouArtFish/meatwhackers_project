@@ -1,14 +1,20 @@
 import spacy
 from transformers import pipeline
 from textblob import TextBlob
+import torch
+
+
 
 #yes
 def MainScore(ntext):
 
     # Load a model that can classify witho
     # ut training
-    classifier = pipeline("zero-shot-classification", 
-                        model="facebook/bart-large-mnli")
+    classifier = pipeline("zero-shot-classification",
+                     model="typeform/distilbert-base-uncased-mnli",
+                     device=0 if torch.cuda.is_available() else -1,
+                     batch_size=16,  # Process 8 sentences at once
+                     truncation=True)
 
 
     # Define your categories
@@ -108,3 +114,22 @@ def MainScore(ntext):
         
 
 
+print(MainScore('''The brother of Virginia Giuffre has called on King Charles to strip Prince Andrew of the title "prince" after he announced he is giving up his other titles, including the Duke of York.
+
+Ms Giuffre alleged she was forced to have sex with the prince on three occasions, including when she was aged 17 at the home of his friend Ghislaine Maxwell in London in 2001.
+
+The prince made a financial payment to Ms Giuffre in an out-of-court settlement in 2022, after she had brought a civil case against him. He denies all the accusations against him.
+
+Sky Roberts told BBC Newsnight his sister, who took her own life earlier this year, would be "very proud" of the latest development regarding Prince Andrew.
+
+The prince has been under increasing pressure over his links with sex offender Jeffrey Epstein, with calls for Buckingham Palace to take action against him.
+
+On Friday, the prince announced that he was deciding to voluntarily hand back his titles and to give up membership of the Order of the Garter, the oldest and most senior order of chivalry in Britain.
+
+He will also cease be the Duke of York, a title received from his mother, the late Queen Elizabeth II.
+
+But Mr Roberts said he would like to see the King go a step further, saying: "We would call on the King to potentially go ahead and take out the prince in the Andrew."
+
+"I think anybody that was implicated in this should have some sort of resolve. They should have some sort of responsibility and accountability for these survivors," he said, adding that he would "welcome any contact from the King, from members of parliament".
+
+When Prince Andrew was born in 1960, he was automatically a prince as the son of a monarch. This could only be changed if a Letters Patent was issued by the King. '''))
