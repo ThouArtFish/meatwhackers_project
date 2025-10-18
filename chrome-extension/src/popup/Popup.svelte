@@ -8,6 +8,8 @@
     type: HighlightType;
   }
 
+  type FactCheckState = "ready" | "factChecking" | "completed";
+
   const highlightColors: Record<HighlightType, string> = {
     person: "rgba(255, 0, 0, 0.5)",
     organization: "rgba(0, 255, 0, 0.5)",
@@ -15,13 +17,15 @@
     evidence: "rgba(255, 255, 0, 0.5)"
   }
 
-  let factChecking: boolean = false;
-  let checked: boolean = false;
+  let state: FactCheckState = "ready";
 
   // fact checks the current page the user has open
   // sends a request to the python server
   // the python server returns the names of articles and the fact check results
   async function factCheck() {
+    if (state !== "ready") return; // prevent multiple clicks
+    state = "factChecking";
+
     console.log("Fact checking the current page...");
     
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -36,6 +40,7 @@
       });
     } catch (error) {
       console.error("Error fetching from Python server:", error);
+      state = "ready";
       return;
     }
 
@@ -46,7 +51,13 @@
     const gemeniResponse: string = data.response as string;
 
     highlightSentences(highlightedSentences);
+<<<<<<< HEAD
     displayHeaderIcons(totalRating, gemeniResponse);
+=======
+    displayHeaderIcons(totalRating);
+
+    state = "completed";
+>>>>>>> 0ae695c8c848eb5357b61d633d59d954d81dcaac
   }
 
   // people, names, businesses, dates, evidence
@@ -156,9 +167,9 @@
 
 <img src="src/assets/logo.svg" alt="Logo" />
 
-{#if factChecking}
+{#if state === "factChecking"}
   <p>Fact checking in progress...</p>
-{:else if checked}
+{:else if state === "completed"}
   <p>Fact check complete!</p>
 {:else}
   <button on:click={factCheck}>
@@ -194,6 +205,7 @@
   }
 
   button {
+    transition: background-color 0.2s ease;
     background-color: rgba(255, 255, 255, 0.25);
     border-radius: 999px;
     outline-width: 1px;
@@ -202,5 +214,10 @@
     border-style: none;
     padding-inline: 1rem;
     padding-block: 0.5rem;
+  }
+  
+  button:hover {
+    transition: background-color 0.2s ease;
+    background-color: rgba(255, 255, 255, 0.35);
   }
 </style>
