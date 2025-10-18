@@ -6,7 +6,7 @@ import torch
 
 
 #yes
-def MainScore(ntext):
+def MainScore(text):
 
     #Intialise classifer for evidence categories
     classifier = pipeline("zero-shot-classification",
@@ -29,7 +29,7 @@ def MainScore(ntext):
 
 
 
-    text = ntext
+    
 
     doc = nlp(text)
     phrases = []
@@ -204,7 +204,7 @@ def MainScore(ntext):
     
     
 
-    return CalculateScore(sub_scores, sub_count, polarity(text),evi_count, evi_scores)
+    return CalculateScore(sub_scores, sub_count, polarity(text),evi_count, evi_scores), Highlighted()
 
         
 
