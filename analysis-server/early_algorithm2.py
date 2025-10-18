@@ -113,8 +113,6 @@ class TextAnalyzer:
         sub_count = len(self.phrases)
         evi_count = len(self.phrases)
 
-        evi_count += 0.01 * len(highlighted_words)
-
         polarity_score = TextBlob(self.text).polarity
 
       
