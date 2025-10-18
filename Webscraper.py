@@ -1,0 +1,99 @@
+import requests
+from bs4 import BeautifulSoup
+import re
+
+
+class BaseScraper:
+    """Base class that handles fetching and parsing HTML pages."""
+    
+    def __init__(self, base_url):
+        self.base_url = base_url
+
+    def get_page(self, url):
+        """Fetch the HTML content of a URL."""
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            return response.text
+        except requests.RequestException as e:
+            print(f"Request failed for {url}: {e}")
+            return None
+
+    def parse_html(self, html):
+        """Parse HTML into a BeautifulSoup object."""
+        return BeautifulSoup(html, "html.parser")
+
+
+class Article:
+    """Data class for storing article details."""
+    
+    def __init__(self, title, link, text=None):
+        self.title = title
+        self.link = link
+        self.text = text
+
+    def __repr__(self):
+        return f"<Article title='{self.title}' link='{self.link}'>"
+
+
+class BBCBusinessScraper(BaseScraper):
+    """Scraper for BBC Business section."""
+    
+    def __init__(self, base_url="https://www.bbc.co.uk/news/business"):
+        super().__init__(base_url)
+        self.headlines = []
+
+    def fetch_headlines(self):
+        """Scrape headlines and links from the BBC Business page."""
+        html = self.get_page(self.base_url)
+        if not html:
+            return []
+        
+        soup = self.parse_html(html)
+
+        # BBC structure (may change; verify selectors)
+        headline_elements = soup.find_all("a",class_=re.compile(r"PromoLink"))
+        for tag in headline_elements:
+            title = tag.get_text(strip=True)
+            link = tag.get("href")
+            if link and not link.startswith("http"):
+                link = f"https://www.bbc.co.uk{link}"
+            if title and link:
+                self.headlines.append(Article(title, link))
+        return self.headlines
+
+    def fetch_article_text(self, article):
+        """Fetch the full text from a given article page."""
+        html = self.get_page(article.link)
+        if not html:
+            return None
+        
+        soup = self.parse_html(html)
+        
+        # Typical BBC article paragraphs
+        paragraphs = soup.select("main p")
+        text = " ".join(p.get_text(strip=True) for p in paragraphs)
+        article.text = text
+        return text
+
+    def get_all_articles(self, limit=None):
+        """Fetch all article data including full text (optionally limit count)."""
+        if not self.headlines:
+            self.fetch_headlines()
+        articles = self.headlines[:limit] if limit else self.headlines
+        for article in articles:
+            self.fetch_article_text(article)
+        return articles
+
+
+if __name__ == "__main__":
+    scraper = BBCBusinessScraper()
+    headlines = scraper.fetch_headlines()
+    print(f"Found {len(headlines)} headlines:")
+    for h in headlines[:5]:
+        print("-", h.title, "->", h.link)
+    
+    # Example: Fetch the full text for the first article
+    if headlines:
+        article_text = scraper.fetch_article_text(headlines[0])
+        print("\nFirst article text snippet:\n", article_text[:500])
