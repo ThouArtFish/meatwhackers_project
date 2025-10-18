@@ -23,16 +23,16 @@
   // the python server returns the names of articles and the fact check results
   async function factCheck() {
     console.log("Fact checking the current page...");
-
+    
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
     let res;
     try {
       res = await fetch(`${PYTHON_SERVER_URL}/factcheck_article?url=${encodeURIComponent(tab.url!)}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json"
-      }
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        }
       });
     } catch (error) {
       console.error("Error fetching from Python server:", error);
@@ -43,9 +43,10 @@
 
     const highlightedSentences: Highlight[] = data.highlighted_sentences as Highlight[];
     const totalRating: number = data.total as number;
+    const gemeniResponse: string = data.response as string;
 
     highlightSentences(highlightedSentences);
-    displayHeaderIcons(totalRating);
+    displayHeaderIcons(totalRating, gemeniResponse);
   }
 
   // people, names, businesses, dates, evidence
@@ -120,7 +121,7 @@
     }
   }
 
-  async function displayHeaderIcons(rating: number) {
+  async function displayHeaderIcons(rating: number, geminiResponse: string) {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
     const tierImage = findTierImage(rating);
@@ -142,10 +143,11 @@
 
         mainHeading.insertAdjacentElement("afterend", image);
 
-        // // Top page summary box
-        // let summary = document.createElement("p");
-        // summary.id = "summary";
-        // mainHeading.insertAdjacentElement("beforebegin", summary);
+        // Top page summary box
+        let summary = document.createElement("p");
+        summary.id = "summary";
+        mainHeading.insertAdjacentElement("beforebegin", summary);
+        summary.innerText = geminiResponse
       },
       args: [imageSrc]
     })
