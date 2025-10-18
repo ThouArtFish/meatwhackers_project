@@ -21,9 +21,13 @@ def MainScore(ntext):
                 "hearsay evidence (Someonte told me, I heard, the rumour is etc)", 
                 "no evidence or simple fact"]
 
-
-
     nlp = spacy.load("en_core_web_lg")
+
+    months = {'january', 'february', 'march', 'april', 'may', 'june', 'july', 
+            'august', 'september', 'october', 'november', 'december',
+            'jan', 'feb', 'mar', 'apr', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'}
+
+
 
     text = ntext
 
@@ -61,15 +65,29 @@ def MainScore(ntext):
 
     tokenize(text)
 
+    highlight_sentences = []
+
+    def HighlightSentence(sentence, result):
+
+        print("Hello")
+
+        if result == 1:
+            highlight_sentences.append([sentence,'evidence'])
+        
+        elif result == -1:
+            highlight_sentences.append([sentence,'hearsay'])
+    
 
     def EvidenceScore(phrase):
         result = classifier(phrase, categories)
 
-
+        print(result['labels'][0])
         if result['labels'][0] == "direct evidence (e.g., eyewitness accounts, video, confessions)":
             score = 1
-        elif result['labels'][0] == "hearsay evidence (Someonte told me, I heard, the rumour is etc":
+            HighlightSentence(phrase, score)
+        elif result['labels'][0] == "hearsay evidence (Someonte told me, I heard, the rumour is etc)":
             score = -1
+            HighlightSentence(phrase, score)
         else:
             score = 0
         
@@ -96,14 +114,14 @@ def MainScore(ntext):
 
     
     def LineScore(sentence):
-        return [sentence, subjectivity(sentence), EvidenceScore(sentence)]
         
-            
+        for sentence in phrases:
+            rated_sentences.append([sentence, subjectivity(sentence), EvidenceScore(sentence)])
     
-    for phrase in phrases:
-        print(LineScore(phrase))
-
+        return rated_sentences
     
+    
+   
     
 
     def CalculateScore(subjectivity, scount, polarity, ecount, evidence):
@@ -117,9 +135,79 @@ def MainScore(ntext):
 
     #This returns Subjectivity score, Polarity Score, Evidence score, and Total Score
 
+    
+
+
+    def HighlightWord():
+
+        person = []
+        org = []
+        gpe = []
+        date = []
+        time = []
+        money = []
+        percent = []
+        cardinal = []
+        law = []
+        event = []
+
+        for ent in doc.ents:
+                # People
+            if ent.label_ == "PERSON":
+                person.append(ent.text)
+
+            # Companies & Organizations  
+            if ent.label_ == "ORG":
+                org.append(ent.text)
+               
+
+            # Locations (Countries, cities, states)
+            if ent.label_ == "GPE":
+                gpe.append(ent.text)
+
+            # Dates
+            if ent.label_ == "DATE":
+                if (any(char.isdigit() for char in ent.text) or ent.text.lower() in months) and len(ent.text) > 2:
+                    date.append(ent.text)
+
+            # Times  
+            if ent.label_ == "TIME":
+                time.append(ent.text)
+
+            # Monetary amounts
+            if ent.label_ == "MONEY":
+                money.append(ent.text)
+
+            # Percentages
+            if ent.label_ == "PERCENT":
+                percent.append(ent.text)
+
+            # Numbers
+            if ent.label_ == "CARDINAL":
+                cardinal.append(ent.text)
+
+            # Laws/Legal documents (limited)
+            if ent.label_ == "LAW":
+                law.append(ent.text)
+
+            # Events
+            if ent.label_ == "EVENT":
+                event.append(ent.text)
+
+            
+        return person, org, gpe, date, time, money, percent, cardinal, law, event
+        
+    def Highlighted():
+
+        return highlight_sentences, HighlightWord()
+    
+    
+    
+
     return CalculateScore(sub_scores, sub_count, polarity(text),evi_count, evi_scores)
 
         
+
 
 
 print(MainScore('''The brother of Virginia Giuffre has called on King Charles to strip Prince Andrew of the title "prince" after he announced he is giving up his other titles, including the Duke of York.
