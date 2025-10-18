@@ -10,6 +10,7 @@ class BaseScraper:
         self.base_url = base_url
         self.html = self.get_page(base_url)
         self.soup = self.parse_html(self.html) if self.html else None
+        self.related_articles = []
 
     def get_page(self, url):
         """Fetch the HTML content of a URL."""
@@ -44,7 +45,7 @@ class BBCBusinessScraper(BaseScraper):
     def __init__(self, base_url="https://www.bbc.co.uk/news/business"):
         super().__init__(base_url)
         self.headlines = []
-        self.related_articles = []
+        #self.related_articles = []
 
     def fetch_headlines(self):
         """Scrape headlines and links from the BBC Business page."""
@@ -139,8 +140,27 @@ class BBCArticleScraper(BaseScraper):
         last_text = journalist_soup.select_one('ol[role="list"] li:last-child div').get_text(strip=True)
         return (journalist_name, int(last_text))
     
+    def get_related_articles(self):
+        self.title = self.get_heading()
+        newsURL = f'https://www.bing.com/news/search?q={self.title}'
+        newsPage = requests.get(newsURL)
+        newsSoup = BeautifulSoup(newsPage.text,'html.parser')
+        cards = newsSoup.find_all('div',class_="news-card-body card-with-cluster")
+
+        for card in cards[:3]:
+            a_tag = card.find("a",class_="title")
+            if a_tag:
+                h2_tag = a_tag.find("h2")
+                if h2_tag:
+                    headline = h2_tag.get_text(strip=True)
+                    link = a_tag.get("href")
+                    print(headline+link)
+                    self.related_articles.append((headline,link))     
+        return self.related_articles
+
 if __name__ == "__main__":
     scraper = BBCArticleScraper('https://www.bbc.co.uk/news/articles/cq502xl53xqo')
     print(scraper.get_heading())
     print(scraper.get_text_content())
     print(scraper.get_journalist())
+    print(scraper.get_related_articles())
