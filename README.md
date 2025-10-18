@@ -35,5 +35,7 @@ Every time you make a change the dev server will update and reload the extension
 source .venv/bin/activate  # On Windows use `venv\Scripts\activate`
 cd analysis-server
 pip install -r requirements.txt
-flask run server.py
+python3 server.py # Just `python` on windows
 ```
+
+The server will start running on `http://localhost:8000`.
