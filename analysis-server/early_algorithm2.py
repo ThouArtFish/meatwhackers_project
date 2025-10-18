@@ -68,6 +68,7 @@ class TextAnalyzer:
 
     # --- Entity Highlighting ---
     def highlight_words(self):
+       
         categories = {
             "person": [], "org": [], "gpe": [], "date": [], "time": [],
             "money": [], "percent": [], "cardinal": [], "law": [], "event": []
@@ -82,7 +83,7 @@ class TextAnalyzer:
             elif label == "GPE":
                 categories["gpe"].append(ent.text)
             elif label == "DATE":
-                if any(char.isdigit() for char in ent.text) or ent.text.lower() in self.months:
+                if any(char.isdigit() for char in ent.text) or ent.text.lower() in self.months and len(ent.text) > 2:
                     categories["date"].append(ent.text)
             elif label == "TIME":
                 categories["time"].append(ent.text)
@@ -96,8 +97,14 @@ class TextAnalyzer:
                 categories["law"].append(ent.text)
             elif label == "EVENT":
                 categories["event"].append(ent.text)
+            
+        
 
-        return {k: set(v) for k, v in categories.items() if v}
+        highlighted_list = []
+        for k, v in categories.items():
+            highlighted_list.extend([{"text": item, "type": k} for item in set(v)])
+
+        return highlighted_list
 
     # --- Aggregate Score ---
     def calculate_score(self):
@@ -105,6 +112,9 @@ class TextAnalyzer:
         evi_scores = sum(self.evidence_score(p) for p in self.phrases)
         sub_count = len(self.phrases)
         evi_count = len(self.phrases)
+
+        evi_count += 0.01 * len(highlighted_words)
+
         polarity_score = TextBlob(self.text).polarity
 
       
@@ -119,9 +129,17 @@ class TextAnalyzer:
     # --- Main Report ---
     def report(self):
         subjectivity, polarity, evidence, total = self.calculate_score()
-        highlighted_sentences = self.highlight_sentences
+        highlighted_sentences = [
+                {"text": s, "type": typ} 
+                for typ, sentences in self.highlight_sentences.items() 
+                for s in sentences
+            ]
+
+        #add score per evidence
+        total += 0.01 * len(highlighted_words)
+
         highlighted_words = self.highlight_words()
-        return subjectivity, polarity, evidence, total, {"highlighted_sentences": highlighted_sentences}, {"highlighted_words": highlighted_words}
+        return subjectivity, polarity, evidence, total, highlighted_sentences, highlighted_words
 #ss
 #sadasdas
 if __name__ == '__main__':
