@@ -75,6 +75,22 @@ class BBCBusinessScraper(BaseScraper):
         text = " ".join(p.get_text(strip=True) for p in paragraphs)
         article.text = text
         return text
+    
+    def get_journalist(self,article):
+        html = self.get_page(article.link)
+        if not html:
+            return None
+        soup = self.parse_html(html)
+
+        journalist = soup.find("span",class_="ssrcss-vd0pba-TextContributorName epw3ir01")
+
+        if not journalist:
+            return -1
+        journalist_name = journalist.get_text(strip=True)
+        if not journalist_name:
+            return -1
+        return journalist_name
+        
 
     def get_all_articles(self, limit=None):
         """Fetch all article data including full text (optionally limit count)."""
@@ -83,6 +99,7 @@ class BBCBusinessScraper(BaseScraper):
         articles = self.headlines[:limit] if limit else self.headlines
         for article in articles:
             self.fetch_article_text(article)
+            self.get_journalist(article)
         return articles
 
 
@@ -97,3 +114,5 @@ if __name__ == "__main__":
     if headlines:
         article_text = scraper.fetch_article_text(headlines[0])
         print("\nFirst article text snippet:\n", article_text[:500])
+        journalist_text = scraper.get_journalist(headlines[0])
+        print(journalist_text)
