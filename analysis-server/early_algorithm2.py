@@ -8,23 +8,53 @@ class TextAnalyzer:
     def __init__(self, text, articles_count):
         self.text = text
         self.articles_count = articles_count
-        self.nlp = spacy.load("en_core_web_lg")
+        self.nlp = spacy.load("en_core_web_trf")
         self.doc = self.nlp(text)
         self.phrases = [sent.text for sent in self.doc.sents]
 
         self.classifier = pipeline(
             "zero-shot-classification",
-            model="typeform/distilbert-base-uncased-mnli",
+            model="facebook/bart-large-mnli",
             device=0 if torch.cuda.is_available() else -1,
             batch_size=16,
             truncation=True
         )
 
-        self.categories = [
-                "evidence", "secondhand", "hearsay", "neutral"
-        ]
+        
 
-        self.highlighted_sentences = {"evidence": []}
+        self.categories = [
+                
+                    "direct_quote",       # X said, exact quote
+                    "official_statement", # from authorities or organizations
+                    "fact",               # objective, verifiable info
+                    "analysis",           # commentary or opinion
+                    "rumor",     
+                    "eyewitness",
+                    "suspection",
+                    "neutral",
+                    "analysis",
+                    "commentary", 
+                    "hearsay"
+                
+        ]
+        
+        self.category_weights = {
+            "direct_quote": 0.95,
+            "fact": 1.0,
+            "official_statement": 0.8,
+            "eyewitness": 0.5,
+            "analysis": 0.0,
+            "rumor": -0.5,
+            "neutral": 0.0,
+            "suspection":-0.5,
+            "analysis":0.0,
+            "commentary":0.0,
+            "hearsay": -0.5
+
+        }
+
+
+        self.highlighted_sentences = {"direct quote": []}
         self.months = {'january', 'february', 'march', 'april', 'may', 'june', 'july',
                        'august', 'september', 'october', 'november', 'december',
                        'jan', 'feb', 'mar', 'apr', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'}
@@ -39,25 +69,58 @@ class TextAnalyzer:
 
     # --- Evidence Scoring ---
     def get_highlighted_sentences(self, sentence, score):
-        if score == 1 or score == 0.5:
-            self.highlighted_sentences["evidence"].append(sentence)
-        elif score == -1:
+        if score == 0.95:
+            self.highlighted_sentences["direct quote"].append(sentence)
+        elif score == 1.0:
+            self.highlighted_sentences.setdefault("official statement", []).append(sentence)
+        elif score == 0.8:
+            self.highlighted_sentences.setdefault("official statement", []).append(sentence)
+        elif score == 0.7:
+            self.highlighted_sentences.setdefault("attributed statement", []).append(sentence)
+        elif score == -0.5:
             self.highlighted_sentences.setdefault("hearsay", []).append(sentence)
+        elif score == 0.5:
+            self.highlighted_sentences.setdefault("eyewitness", []).append(sentence)
+        elif score == -0.3:
+            self.highlighted_sentences.setdefault("uncertainty statement", []).append(sentence)
+
+        
 
 
     def get_evidence_score(self, phrase):
-        result = self.classifier(phrase, self.categories)
-        label = result['labels'][0]
-        score = 0
-        if label == self.categories[0]:
-            score = 1
-        elif label == self.categories[1]:
-            score = 0.5
-        elif label == self.categories[2]:
-            score = -1
-        else:
-            score = 0
 
+        phrase = phrase.strip()
+        if not phrase:
+            return 0.0  # skip empty strings
+
+        doc_phrase = self.nlp(phrase)
+        result = self.classifier(phrase, self.categories)
+        
+        label = result['labels'][0]
+
+        # Step 1: Check for quotes first
+        if '"' in doc_phrase.text or "“" in doc_phrase.text or "”" in doc_phrase.text:
+            label = "direct_quote"
+
+        # Step 2: Only if no quotes, check for entities
+        elif label in ["rumor", "hearsay"]:
+            if any(ent.label_ in ["ORG", "GPE", "DATE", "MONEY", "PERCENT"] for ent in doc_phrase.ents):
+                label = "analysis"
+                
+        
+        # Check if label is analysis/neutral/commentary
+        if label in ["analysis", "neutral", "commentary"]:
+        # Check if the phrase has numeric/date/money entities
+            if any(ent.label_ in ["CARDINAL", "DATE", "MONEY", "PERCENT"] for ent in doc_phrase.ents):
+                label = "fact"
+            
+            # Check if there are quotation marks anywhere in the text
+            if '"' in doc_phrase.text or "“" in doc_phrase.text or "”" in doc_phrase.text:
+                label = "direct_quote"
+                
+        score = self.category_weights[label]
+
+        print(score)
 
         self.get_highlighted_sentences(phrase, score)
         multiplier = result['scores'][0]
@@ -115,13 +178,16 @@ class TextAnalyzer:
         final_highlighted = []
 
         for phrase in self.phrases:
-            # 1. Check if the sentence is highlighted
+            if not phrase.strip():
+                continue  # skip empty or whitespace-only phrases
+
+            # 1. Check if the sentence was classified as one of the evidence types
             for typ, sentences in self.highlighted_sentences.items():
                 if phrase in sentences:
                     final_highlighted.append({"text": phrase, "type": typ})
                     break  # stop after finding the type
 
-            # 2. Get entities in this specific sentence
+            # 2. Extract entities from the same sentence
             doc_phrase = self.nlp(phrase)
             for ent in doc_phrase.ents:
                 label = ent.label_
@@ -133,7 +199,9 @@ class TextAnalyzer:
                 elif label == "GPE":
                     word_type = "gpe"
                 elif label == "DATE":
-                    if any(char.isdigit() for char in ent.text) or (ent.text.lower() in self.months and len(ent.text) > 2):
+                    if any(char.isdigit() for char in ent.text) or (
+                        ent.text.lower() in self.months and len(ent.text) > 2
+                    ):
                         word_type = "date"
                 elif label == "TIME":
                     word_type = "time"
@@ -152,7 +220,7 @@ class TextAnalyzer:
                     final_highlighted.append({"text": ent.text, "type": word_type})
 
         return final_highlighted
-    
+        
     # --- Aggregate Score ---
     def calculate_score(self):
         sub_scores = sum(self.get_subjectivity(p) for p in self.phrases)
@@ -199,54 +267,53 @@ class TextAnalyzer:
 #ss
 #sadasdas
 if __name__ == '__main__':
-    text = '''Gaza's Hamas-run civil defence says 11 people were killed, all from the same family, after the bus they were in was hit by an Israeli tank shell in northern Gaza.
+    text = '''The US State Department says it has "credible reports" that Hamas is planning an "imminent" attack on civilians in Gaza, which it says would violate the ceasefire agreement.
 
-The Abu Shaaban family, it said, were trying to reach their home to inspect it when the incident happened in the Zeitoun neighbourhood of Gaza City on Friday night.
+A statement released on Saturday said a planned attack against Palestinians would be a "direct and grave" violation of the ceasefire agreement and "undermine the significant progress achieved through mediation efforts".
 
-This is the deadliest single incident involving Israeli soldiers in Gaza since the start of the ceasefire eight days ago.
+The state department did not not provide further details on the attack and it is unclear what reports it was citing.
+
+The first phase of the ceasefire deal between Hamas and Israel is currently in progress - all living hostages have been released and bodies of the deceased are still being returned to Israel.
+
+Also part of the agreement, Israel freed 250 Palestinian prisoners in its jails and 1,718 detainees from Gaza.
+
+Washington said it had already informed other guarantors of the Gaza peace agreement - which include Egypt, Qatar and Turkey - and demanded Hamas uphold its end of the ceasefire terms.
+
+"Should Hamas proceed with this attack, measures will be taken to protect the people of Gaza and preserve the integrity of the ceasefire," the statement said, external.
+
+Hamas has not yet commented on the statement.
+
+President Donald Trump has previously warned Hamas against the killing of civilians.
+
+"If Hamas continues to kill people in Gaza, which was not the Deal, we will have no choice but to go in and kill them," Trump said in a post on Truth Social earlier this week.
+
+He later clarified that he would not be sending US troops into Gaza.
+
+Last week, BBC Verify authenticated graphic videos that showed a public execution carried out by Hamas gunmen in Gaza.
+
+The videos showed several men with guns line up eight people, whose arms were tied behind their backs, before killing them in a crowded square.
+
+BBC Verify could not confirm the identity of the masked gunmen, though some appeared to be wearing the green headbands associated with Hamas.
+
+On Saturday, Israel said it had received two more bodies from Gaza that Hamas said are hostages, though they have yet to be formally identified.
+
+So far, the remains of 10 out of 28 deceased hostages had been returned to Israel.
+
+Israeli Prime Minister Benjamin Netanyahu on Saturday said the Rafah border crossing between Gaza and Egypt would remain closed until Hamas returns the remaining bodies.
+
+The Rafah crossing is a vital gateway for Palestinians who need medical assistance to leave Gaza, and for thousands of others to return.
+
+Separately on Saturday, 11 members of one Palestinian family were killed by an Israeli tank shell, according to the Hamas-run civil defence ministry, in what was the deadliest single incident involving Israeli soldiers in Gaza since the start of the ceasefire.
 
 The Israeli military said soldiers had fired at a "suspicious vehicle" that had crossed the so-called yellow line demarcating the area still occupied by Israeli forces in Gaza.
 
-Israeli soldiers continue to operate in more than half of the Gaza Strip, under the terms of the first phase of the ceasefire agreement.
-
-Civil defence spokesman Mahmud Bassal told AFP news agency the victims were killed while "trying to check on their home" in the area.
-
-The dead included women and children, according to the civil defence.
-
-The Israel Defence Forces (IDF) said a "suspicious vehicle was identified crossing the yellow line and approaching IDF troops operating in the northern Gaza Strip" on Friday, prompting it to fire "warning shots" towards the vehicle.
-
-It said the vehicle "continued to approach the troops in a way that caused an imminent threat to them" and "troops opened fire to remove the threat, in accordance with the agreement."
-
-Hamas said the family had been targeted without justification.
-
-The IDF has warned Palestinians from entering areas in Gaza still under its control.
-
-With limited internet access, many Palestinians do not know the position of Israeli troops as the yellow demarcation line is not physically marked, and it is unclear if the area where the bus was travelling did cross it.
-
-The BBC has asked the IDF for coordinates of the incident.
-
-Israeli Defence Minister Israel Katz said on Friday the army would set up visual signs to indicate the location of the line.
-
-In a separate development, Hamas on Friday released the body of Israeli hostage Eliyahu Margalit to the Red Cross, which returned it to Israel.
-
-Mr Margalit was the tenth deceased hostage to be returned from Gaza. The remains of another 18 people are yet to be repatriated.
-
-Israel handed the bodies of 15 more Palestinians over to officials in Gaza via the Red Cross, the Hamas-run health ministry said, bringing the total number of bodies it has received to 135.
-
-There has been anger in Israel that Hamas has not returned all of the dead hostages' bodies, in line with last week's ceasefire deal - though the US has downplayed the suggestion it amounts to a breach.
-
-The IDF has stressed that Hamas must "uphold the agreement and take the necessary steps to return all the hostages".
-
-Hamas has blamed Israel for making the task difficult because Israeli strikes have reduced so many buildings to rubble and it does not allow heavy machinery and diggers into Gaza to be able to search for the hostages' bodies.
-
-As part of the US-brokered ceasefire deal, Israel freed 250 Palestinian prisoners in Israeli jails and 1,718 detainees from Gaza.
-
-Hamas also returned all 20 living hostages to Israel.
+There are no physical markers of this line, and it is unclear if the bus did cross it. The BBC has asked the IDF for the coordinates of the incident.
 
 The Israeli military launched a campaign in Gaza in response to the 7 October 2023 attack, in which Hamas-led gunmen killed about 1,200 people in southern Israel and took 251 others hostage.
 
-At least 67,900 people have been killed by Israeli attacks in Gaza since then, according to the territory's Hamas-run health ministry, whose figures are seen by the UN as reliable.'''
-    
+At least 68,000 people have been killed by Israeli attacks in Gaza since then, according to the Hamas-run health ministry, whose figures are seen by the UN as reliable.
+
+In September, a UN commission of inquiry said Israel had committed genocide against Palestinians in Gaza. Israel categorically rejected the report as "distorted and false".'''
     analyzer = TextAnalyzer(text, 29)
     S,P,E,T,HP= analyzer.report()
     print(S,P,E,T,HP)
