@@ -192,6 +192,7 @@
     <button class="rating-button" on:click={upvote}><ThumbsUp /></button>
     <span class="count">{upvoteCount}</span>
   </div>
+  
   <div class="count-container">
     <button class="rating-button" on:click={downvote}><ThumbsDown /></button>
     <span class="count">{downvoteCount}</span>
