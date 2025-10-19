@@ -100,10 +100,10 @@ class BBCBusinessScraper(BaseScraper):
         journalist = soup.find("span",class_="ssrcss-vd0pba-TextContributorName epw3ir01")
 
         if not journalist:
-            return -1
+            return None
         journalist_name = journalist.get_text(strip=True)
         if not journalist_name:
-            return -1
+            return None
         formatted_name = journalist_name.replace(" ", "+")
         url = f"https://www.bbc.co.uk/search?q={formatted_name}&d=NEWS_PS"
         journalist_page = requests.get(url)

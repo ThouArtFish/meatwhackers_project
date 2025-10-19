@@ -131,21 +131,54 @@ def fact_check_headlines():
     scraper = webscraper.BBCBusinessScraper()
     headlines = scraper.fetch_headlines()
     
-    headline_scores = []
-    for headline in headlines[:10]:
-        text = scraper.fetch_article_text(headline)
-        subjectivity, polarity, evidence, total,useless,useless2 = early_algorithm2.TextAnalyzer(text).report()
+    results = []
+    conn = sqlite3.connect("factcheck.db")
+    c = conn.cursor()
 
-        headline_scores.append({
-            "title": headline.title,
-            "link": headline.link,
-            "subjectivity": subjectivity,
-            "polarity": polarity,
-            "evidence": evidence,
-            "total": total
-        })
-    # Return automatically as JSON
-    return headline_scores
+    # 🔹 Fetch all existing headlines from DB in one go
+    c.execute("SELECT title, link, subjectivity, polarity, evidence, total FROM headlines")
+    existing = { (row[0], row[1]): row for row in c.fetchall() }
+
+    for headline in headlines[:10]:
+        key = (headline.title, headline.link)
+
+        if key in existing:
+            # Use DB values if already stored
+            row = existing[key]
+            result = {
+                "title": row[0],
+                "link": row[1],
+                "subjectivity": row[2],
+                "polarity": row[3],
+                "evidence": row[4],
+                "total": row[5]
+            }
+        else:
+            # Otherwise fetch, analyze, and save
+            text = scraper.fetch_article_text(headline)
+            journalist_info = scraper.get_journalist(headline)
+            subjectivity, polarity, evidence, total, _, _ = early_algorithm2.TextAnalyzer(text,journalist_info[1]).report()
+
+            # Save to DB
+            c.execute('''
+                INSERT INTO headlines (title, link, subjectivity, polarity, evidence, total)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (headline.title, headline.link, subjectivity, polarity, evidence, total))
+            conn.commit()
+
+            result = {
+                "title": headline.title,
+                "link": headline.link,
+                "subjectivity": subjectivity,
+                "polarity": polarity,
+                "evidence": evidence,
+                "total": total
+            }
+
+        results.append(result)
+
+    conn.close()
+    return results
 
 @app.get("/factcheck_results")
 def get_factcheck_results():
