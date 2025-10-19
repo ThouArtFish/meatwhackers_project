@@ -38,6 +38,8 @@
   let voteState: VoteState = "none"
   let comments: string[] = []
   let comment = ""
+  let justClicked: Boolean = false;
+  let mouse_pos = { x: 0, y: 0 }
 
   async function upvote() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -122,6 +124,7 @@
 
       const highlightedPhrases: Highlight[] = data.highlighted_phrases as Highlight[];
       const gemeniResponse: string = data.response as string;
+      const articles = data.related_articles as { title: string; link: string; }[];
 
       highlight(highlightedPhrases);
       displayHeaderIcons([
@@ -129,7 +132,7 @@
         { type: "polarity", value: data.polarity },
         { type: "evidence", value: data.evidence },
         { type: "total", value: data.total }
-      ], gemeniResponse);
+      ], gemeniResponse, articles);
 
       state = "completed";
       await tag();
@@ -453,7 +456,7 @@
     });
   }
 
-  async function displayHeaderIcons(stats: { type: string; value: number }[], geminiResponse: string) {
+  async function displayHeaderIcons(stats: { type: string; value: number }[], geminiResponse: string, articles: {title: string, link: string}[]) {
     console.log(stats)
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
@@ -462,7 +465,7 @@
 
     chrome.scripting.executeScript({
       target: { tabId: tab.id! },
-      func: (stats: { type: string; value: number }[], imageSrcs: string[], geminiResponse: string, badgeColors: Record<string, string>) => {
+      func: (stats: { type: string; value: number }[], imageSrcs: string[], geminiResponse: string, articles: {title: string, link: string}[]) => {
         // Heading icons
         let mainHeading = document.getElementById("main-heading");
         console.log("Main heading:", mainHeading);
@@ -525,8 +528,79 @@
         summary.id = "summary";
         mainHeading.insertAdjacentElement("beforebegin", summary);
         summary.innerText = geminiResponse;
+
+
+        function clickCheck(e: MouseEvent) {
+          const rect = canvas.getBoundingClientRect();
+
+          mouse_pos.x = e.clientX - rect.left;
+          mouse_pos.y = e.clientY - rect.top;
+
+          justClicked = true;
+        }
+
+        function drawFrame(canvas: HTMLCanvasElement, articles: {title: string, link: string}[]) {
+          const ctx = canvas.getContext("2d");
+          if (!ctx) { return }
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          let cx = canvas.width / 2;
+          let cy = canvas.height / 2;
+          let start_angle = (2 * Math.PI) / articles.length;
+          ctx.fillStyle = "#4f46e5";
+          ctx.strokeStyle = "#10b981";
+          ctx.lineWidth = 3;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.font = "18px";
+
+          for (let i = 0; i < articles.length; i++) {
+            let x = cx + Math.cos(start_angle * (i + 1)) * 0.3 * canvas.width
+            let y = cy + Math.sin(start_angle * (i + 1)) * 0.3 * canvas.height
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(cx, cy);
+            ctx.stroke();
+            ctx.closePath();
+
+            ctx.beginPath();
+            ctx.arc(x, y, 10, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.closePath();
+
+            ctx.strokeText(articles[i].title, x, y)
+
+            if (justClicked) {
+              justClicked = false
+              let cont = {
+                l: x - 10,
+                r: x + 10,
+                u: y - 10,
+                d: y + 10
+              }
+              if (mouse_pos.x > cont.l && mouse_pos.x < cont.r && mouse_pos.y > cont.u && mouse_pos.y < cont.d) {
+                window.open(articles[i].link)
+              }
+            }
+          }
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, 10, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.closePath();
+
+        ctx.strokeText("Related Articles", cx, cy)
+      }
+        // Article node map
+        let canvas = document.createElement("canvas")
+        canvas.height = 400
+        canvas.width = 600
+        canvas.style.backgroundColor = "white";
+        mainHeading.insertAdjacentElement("afterend", canvas)
+        window.addEventListener("mousedown", (e) => {clickCheck(e)})
+        drawFrame(canvas, articles)
       },
-      args: [stats, imageSrcs, geminiResponse, badgeColors]
+      args: [stats, imageSrcs, geminiResponse, articles]
     })
   }
 
@@ -637,7 +711,7 @@
 
       if (res.status === 200) {
         const json = await res.json()
-        comments = json.comments.map((comment) => comment.comment_text)
+        comments = json.comments.map((comment: any) => comment.comment_text)
         console.log(json.comments)
       }
     } catch (error) {
@@ -780,7 +854,6 @@
   .comment-input {
     margin-top: 0.5rem;
     padding: 0.5rem;
-    width: 70%;
     border-radius: 0.5rem;
     border: none;
     outline-width: 1px;
