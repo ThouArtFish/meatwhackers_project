@@ -52,35 +52,36 @@
     
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab.url != "https://www.bbc.co.uk/news/business") {
-    let res;
-    try {
-      res = await fetch(`${PYTHON_SERVER_URL}/factcheck_article?url=${encodeURIComponent(tab.url!)}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json"
-        }
-      });
-    } catch (error) {
-      console.error("Error fetching from Python server:", error);
-      state = "ready";
-      return;
-    }
+      let res;
+      try {
+        res = await fetch(`${PYTHON_SERVER_URL}/factcheck_article?url=${encodeURIComponent(tab.url!)}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json"
+          }
+        });
+      } catch (error) {
+        console.error("Error fetching from Python server:", error);
+        state = "ready";
+        return;
+      }
 
-    const data = await res.json();
-    console.log(data)
+      const data = await res.json();
+      console.log(data)
 
-    const highlightedPhrases: Highlight[] = data.highlighted_phrases as Highlight[];
-    const gemeniResponse: string = data.response as string;
+      const highlightedPhrases: Highlight[] = data.highlighted_phrases as Highlight[];
+      const gemeniResponse: string = data.response as string;
 
-    highlight(highlightedPhrases);
-    displayHeaderIcons([
-      { type: "subjectivity", value: data.subjectivity },
-      { type: "polarity", value: data.polarity },
-      { type: "evidence", value: data.evidence },
-      { type: "total", value: data.total }
-    ], gemeniResponse);
-    state = "completed";
-    await tag();
+      highlight(highlightedPhrases);
+      displayHeaderIcons([
+        { type: "subjectivity", value: data.subjectivity },
+        { type: "polarity", value: data.polarity },
+        { type: "evidence", value: data.evidence },
+        { type: "total", value: data.total }
+      ], gemeniResponse);
+
+      state = "completed";
+      await tag();
   } else {
     let res;
     try {
@@ -96,16 +97,19 @@
       return;
     }
 
-    const data = await res.json();
-    console.log(data);
+    const allData = await res.json();
 
     // Apply icons to all headlines
-    displayHeaderIconsHeadlines([
-      { type: "subjectivity", value: data.subjectivity },
-      { type: "polarity", value: data.polarity },
-      { type: "evidence", value: data.evidence },
-      { type: "total", value: data.total }
-    ]);
+    displayHeaderIconsHeadlines(allData.map((data: any) => ([
+        { type: "subjectivity", value: data.subjectivity },
+        { type: "polarity", value: data.polarity },
+        { type: "evidence", value: data.evidence },
+        { type: "total", value: data.total }
+      ])
+    ));
+
+    state = "completed";
+    await tag();
   }
 }
 
@@ -310,17 +314,15 @@
     }
   }
 
-  async function displayHeaderIconsHeadlines(stats: { type: string; value: number }[]) {
+  async function displayHeaderIconsHeadlines(stats: { type: string; value: number }[][]) {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
     
-    const imageSrcs = tierImages.map((tierImage) => chrome.runtime.getURL(`icons/${tierImage}`));
-
     await chrome.scripting.executeScript({
       target: { tabId: tab.id! },
-      func: (stats: { type: string; value: number }[], imageSrcs: string[], badgeColors: Record<string, string>) => {
+      func: (stats: { type: string; value: number }[][]) => {
         // Find all BBC business headline links
-        const promoLinks = Array.from(document.querySelectorAll("a[class*='PromoLink']"));
+        let promoLinks = Array.from(document.querySelectorAll("a[class*='PromoLink']"));
+        promoLinks = promoLinks.slice(0, 10);
         if (promoLinks.length === 0) {
           console.log("No PromoLink elements found.");
           return;
@@ -333,12 +335,29 @@
           "The overall score of the content"
         ];
 
-        promoLinks.forEach((link, i) => {
+        // Inline version of findTierImage so it exists in the page context
+        function findTierImage(rating: number) {
+          switch (true) {
+            case rating < 0.1:
+              return "cap.svg";
+            case rating < 0.3:
+              return "sus.svg";
+            case rating < 0.5:
+              return "mid.svg";
+            default:
+              return "goated.svg";
+          }
+        }
+
+        promoLinks.forEach((link, index) => {
+          const theStats = stats[index]
           // Make a container for the icons (same look as your displayHeaderIcons)
-          const tierImages = stats.map(stat => findTierImage(stat.value));
+          const tierImages = theStats.map(stat => findTierImage(stat.value));
+          const imageSrcs = tierImages.map((tierImage) => chrome.runtime.getURL(`icons/${tierImage}`));
+
           const container = document.createElement("div");
           container.style.display = "flex";
-          container.style.flexDirection = "column";
+          container.style.flexDirection = "row";
           container.style.alignItems = "left";
           container.style.justifyContent = "start";
           container.style.gap = "0.25rem";
@@ -351,11 +370,6 @@
             row.style.alignItems = "center";
             row.style.justifyContent = "flex-start";
             row.style.gap = "0.25rem";
-
-            const description = document.createElement("span");
-            description.innerText = `${stats[index].type}`;
-            description.style.color = "rgba(0, 0, 0)";
-            description.style.fontSize = "0.85rem";
 
             const image = document.createElement("img");
             image.src = imageSrc;
@@ -376,19 +390,20 @@
 
             div.appendChild(image);
             row.appendChild(div);
-            row.appendChild(description);
             container.appendChild(row);
           });
 
           // Insert container after the headline link
           link.insertAdjacentElement("afterend", container);
+          console.log("inserted icons after promo link");
         });
       },
-      args: [stats, imageSrcs, badgeColors]
+      args: [stats]
     });
   }
 
   async function displayHeaderIcons(stats: { type: string; value: number }[], geminiResponse: string) {
+    console.log(stats)
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
     const tierImages = stats.map(stat => findTierImage(stat.value));
