@@ -365,7 +365,7 @@ def get_votes(link: str = Query(..., description="Article link")):
         "article_id": article_id,
         "link": link,
         "upvotes": result[0],
-        "downvotes": result[1]
+       "downvotes": result[1]
     }
 
 
