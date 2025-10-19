@@ -8,7 +8,7 @@ class TextAnalyzer:
     def __init__(self, text, articles_count):
         self.text = text
         self.articles_count = articles_count
-        self.nlp = spacy.load("en_core_web_trf")
+        self.nlp = spacy.load("en_core_web_sm")
         self.doc = self.nlp(text)
         self.phrases = [sent.text for sent in self.doc.sents]
 
