@@ -53,7 +53,7 @@ class TextAnalyzer:
         }
 
 
-        self.highlighted_sentences = {"direct quote": []}
+        self.highlighted_sentences = []
         self.months = {'january', 'february', 'march', 'april', 'may', 'june', 'july',
                        'august', 'september', 'october', 'november', 'december',
                        'jan', 'feb', 'mar', 'apr', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'}
@@ -68,20 +68,19 @@ class TextAnalyzer:
 
     # --- Evidence Scoring ---
     def get_highlighted_sentences(self, sentence, score):
+        
         if score == 0.95:
-            self.highlighted_sentences["direct quote"].append(sentence)
+            self.highlighted_sentences.append(("direct quote", sentence))
         elif score == 1.0:
-            self.highlighted_sentences.setdefault("fact", []).append(sentence)
+            self.highlighted_sentences.append(("fact", sentence))
         elif score == 0.8:
-            self.highlighted_sentences.setdefault("official statement", []).append(sentence)
-        elif score == 0.7:
-            self.highlighted_sentences.setdefault("attributed statement", []).append(sentence)
+            self.highlighted_sentences.append(("official statement", sentence))
         elif score == -0.5:
-            self.highlighted_sentences.setdefault("hearsay", []).append(sentence)
+            self.highlighted_sentences.append(("hearsay", sentence))
         elif score == 0.5:
-            self.highlighted_sentences.setdefault("eyewitness", []).append(sentence)
+            self.highlighted_sentences.append(("eyewitness", sentence))
         elif score == -0.3:
-            self.highlighted_sentences.setdefault("uncertainty statement", []).append(sentence)
+            self.highlighted_sentences.append(("hearsay", sentence))
 
         
 
@@ -98,8 +97,8 @@ class TextAnalyzer:
         label = result['labels'][0]
 
         # Step 1: Check for quotes first
-        if '"' in doc_phrase.text or "“" in doc_phrase.text or "”" in doc_phrase.text:
-            label = "direct_quote"
+        if any(symbol in doc_phrase.text for symbol in ['"', '“', '”', '‘', '’']):
+                    label = "direct_quote"
 
         # Step 2: Only if no quotes, check for entities
         elif label in ["rumor", "hearsay"]:
@@ -114,13 +113,13 @@ class TextAnalyzer:
                 label = "fact"
             
             # Check if there are quotation marks anywhere in the text
-            if '"' in doc_phrase.text or "“" in doc_phrase.text or "”" in doc_phrase.text:
-                label = "direct_quote"
+            if any(symbol in doc_phrase.text for symbol in ['"', '“', '”', '‘', '’']):
+                    label = "direct_quote"
                 
+        
         score = self.category_weights[label]
 
-
-
+       
         self.get_highlighted_sentences(phrase, score)
         multiplier = result['scores'][0]
         return multiplier * score
@@ -172,20 +171,20 @@ class TextAnalyzer:
 
         return highlighted_list
 
-
+    
     def get_highlighted_phrases(self):
         final_highlighted = []
 
         for phrase in self.phrases:
             if not phrase.strip():
                 continue  # skip empty or whitespace-only phrases
-
+            
+    
             # 1. Check if the sentence was classified as one of the evidence types
-            for typ, sentences in self.highlighted_sentences.items():
-                if phrase in sentences:
-                    final_highlighted.append({"text": phrase, "type": typ})
-                    break  # stop after finding the type
-
+            for sentence_type, sentence_text in self.highlighted_sentences:
+                if sentence_text.strip() == phrase.strip():
+                    final_highlighted.append({"text": phrase.strip(), "type": sentence_type})
+                                    
             # 2. Extract entities from the same sentence
             doc_phrase = self.nlp(phrase)
             for ent in doc_phrase.ents:
@@ -227,7 +226,11 @@ class TextAnalyzer:
         sub_count = len(self.phrases)
         evi_count = len(self.phrases)
 
-        polarity_score = TextBlob(self.text).polarity
+        # Get the raw polarity from TextBlob
+        raw_polarity = TextBlob(self.text).polarity  # -1 to 1
+
+        # Convert to neutral-rewarded scale
+        polarity_score = 1 - 2 * abs(raw_polarity)  # 1 = neutral, -1 = extreme sentiment
 
       
         subjectivity_scaled = (sub_scores / sub_count * 2) - 1
@@ -275,53 +278,19 @@ class TextAnalyzer:
     #ss
 #sadasdas
 if __name__ == '__main__':
-    text = '''The US State Department says it has "credible reports" that Hamas is planning an "imminent" attack on civilians in Gaza, which it says would violate the ceasefire agreement.
+    text = '''In the widely-circulated video, the MP appeared to say "the time for half measures is over" and that the "Conservative party had lost its way" after announcing he had joined Reform, according to the Local Democracy Reporting Service.
 
-A statement released on Saturday said a planned attack against Palestinians would be a "direct and grave" violation of the ceasefire agreement and "undermine the significant progress achieved through mediation efforts".
+In response, Freeman said: "The video is a fabrication, created without my knowledge or consent, and uses my image and voice without permission."
 
-The state department did not not provide further details on the attack and it is unclear what reports it was citing.
+"Regardless of my position as an MP, that should be an offence."
 
-The first phase of the ceasefire deal between Hamas and Israel is currently in progress - all living hostages have been released and bodies of the deceased are still being returned to Israel.
+Freeman has been a Conservative MP since 2010 and served in various ministerial capacities in the previous government.
 
-Also part of the agreement, Israel freed 250 Palestinian prisoners in its jails and 1,718 detainees from Gaza.
+Most recently, he was Minister of State in the Department for Science, Innovation and Technology.
 
-Washington said it had already informed other guarantors of the Gaza peace agreement - which include Egypt, Qatar and Turkey - and demanded Hamas uphold its end of the ceasefire terms.
+He said: "I do not know whether this incident was a politically motivated attack by political opponents or just a dangerous prank, but it is clear that in recent months there has been a huge increase in political disinformation, disruption and extremism – on both the left and the right, by religious extremists, by dangerous influencers like Andrew Tate, and anti-democratic disrupters.
 
-"Should Hamas proceed with this attack, measures will be taken to protect the people of Gaza and preserve the integrity of the ceasefire," the statement said, external.
-
-Hamas has not yet commented on the statement.
-
-President Donald Trump has previously warned Hamas against the killing of civilians.
-
-"If Hamas continues to kill people in Gaza, which was not the Deal, we will have no choice but to go in and kill them," Trump said in a post on Truth Social earlier this week.
-
-He later clarified that he would not be sending US troops into Gaza.
-
-Last week, BBC Verify authenticated graphic videos that showed a public execution carried out by Hamas gunmen in Gaza.
-
-The videos showed several men with guns line up eight people, whose arms were tied behind their backs, before killing them in a crowded square.
-
-BBC Verify could not confirm the identity of the masked gunmen, though some appeared to be wearing the green headbands associated with Hamas.
-
-On Saturday, Israel said it had received two more bodies from Gaza that Hamas said are hostages, though they have yet to be formally identified.
-
-So far, the remains of 10 out of 28 deceased hostages had been returned to Israel.
-
-Israeli Prime Minister Benjamin Netanyahu on Saturday said the Rafah border crossing between Gaza and Egypt would remain closed until Hamas returns the remaining bodies.
-
-The Rafah crossing is a vital gateway for Palestinians who need medical assistance to leave Gaza, and for thousands of others to return.
-
-Separately on Saturday, 11 members of one Palestinian family were killed by an Israeli tank shell, according to the Hamas-run civil defence ministry, in what was the deadliest single incident involving Israeli soldiers in Gaza since the start of the ceasefire.
-
-The Israeli military said soldiers had fired at a "suspicious vehicle" that had crossed the so-called yellow line demarcating the area still occupied by Israeli forces in Gaza.
-
-There are no physical markers of this line, and it is unclear if the bus did cross it. The BBC has asked the IDF for the coordinates of the incident.
-
-The Israeli military launched a campaign in Gaza in response to the 7 October 2023 attack, in which Hamas-led gunmen killed about 1,200 people in southern Israel and took 251 others hostage.
-
-At least 68,000 people have been killed by Israeli attacks in Gaza since then, according to the Hamas-run health ministry, whose figures are seen by the UN as reliable.
-
-In September, a UN commission of inquiry said Israel had committed genocide against Palestinians in Gaza. Israel categorically rejected the report as "distorted and false".'''
+"I have reported this matter to the relevant authorities, and I urge anyone who sees the video to report it immediately rather than share it further".'''
     
     analyzer = TextAnalyzer(text, 29)
    

@@ -78,7 +78,27 @@
         </li>
     </ul>
 </section>
+<section id="future">
+    <h2>What We Would Do In the Future</h2>
+    <p>We have many ideas about what would make a better solution if we had more time, but we could definitely boil it down to <b>four</b> key points:</p>
+    <ol>
+        <li>
+            <p>We would love to improve by using a bigger and more thorough language models. We did not have a sufficiently fast computer running the model in order to have the commands execute in a suitable time-frame, so we had to size down.</p>
 
+        </li>
+        <li>
+            <p>We would love to refine are model by using our upvoting and comment systems to weight our model during training for more accurate results. Due to our time-constraints, we were only able to add the influence of our community recommendations in a rudimentary manner.</p>
+
+        </li>
+        <li>
+            <p>If we were given more time to attack this problem, we would have developed a login/user system for leaving comments, with functional nexted replies.</p>
+        </li>
+        <li>
+            <p>Finally, if we were given more time we would have improved our search for related articles on our canvas. Due to the nature of a demo, we limited the amount of similar articles from other sites to 4, but we would be interested in developing an algorithm to measure similarity and more.</p>
+        </li>
+    </ol>
+
+</section>
 </body>
 <style>
   * {

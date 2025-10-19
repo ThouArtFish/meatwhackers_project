@@ -37,13 +37,59 @@
   let showFeedback: boolean = false;
   let voteState: VoteState = "none"
   let comments: string[] = []
+  let comment = ""
 
   async function upvote() {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    if (voteState === "upvote") return;
+    if (voteState === "downvote") {
+      await fetch(`${PYTHON_SERVER_URL}/articles/downvotes?url=${encodeURIComponent(tab.url!)}&change=-1`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+      }});
+
+      downvoteCount -= 1;
+    }
+
     voteState = "upvote"
+
+    await fetch(`${PYTHON_SERVER_URL}/articles/upvotes?url=${encodeURIComponent(tab.url!)}&change=1`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
+
+    upvoteCount += 1;
   }
 
   async function downvote() {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    if (voteState === "downvote") return;
+    if (voteState === "upvote") {
+      await fetch(`${PYTHON_SERVER_URL}/articles/upvotes?url=${encodeURIComponent(tab.url!)}&change=-1`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+
+      upvoteCount -= 1;
+    }
+
     voteState = "downvote"
+
+    await fetch(`${PYTHON_SERVER_URL}/articles/downvotes?url=${encodeURIComponent(tab.url!)}&change=1`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
+
+    downvoteCount += 1;
   }
 
   // fact checks the current page the user has open
@@ -543,6 +589,22 @@
     return null;
   }
 
+  async function onSubmit(e: SubmitEvent) {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    const res = await fetch(`${PYTHON_SERVER_URL}/articles/comments?link=${encodeURIComponent(tab.url!)}&comment=${comment}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
+
+    if (res.status === 200) {
+      comments = [...comments, comment]
+      comment = ""
+    }
+  }
+
   onMount(async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     
@@ -566,7 +628,7 @@
     }
 
     try {
-      const res = await fetch(`${PYTHON_SERVER_URL}/votes_by_url?link=${encodeURIComponent(tab.url!)}`, {
+      const res = await fetch(`${PYTHON_SERVER_URL}/articles/comments?link=${encodeURIComponent(tab.url!)}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json"
@@ -575,8 +637,8 @@
 
       if (res.status === 200) {
         const json = await res.json()
-        comments = json.comments
-        showFeedback = false; 
+        comments = json.comments.map((comment) => comment.comment_text)
+        console.log(json.comments)
       }
     } catch (error) {
       console.error(error)
@@ -618,7 +680,15 @@
 
     </div>
 
-    <input class="comment-input" type="text" placeholder="Add a comment..." />
+    <form on:submit|preventDefault={onSubmit}>
+      <input class="comment-input" type="text" placeholder="Add a comment..." bind:value={comment} />
+    </form>
+
+    <div class="comments">
+      {#each comments as comment}
+        <p>{comment}</p>
+      {/each}
+    </div>
   </div>
 {/if}
 
