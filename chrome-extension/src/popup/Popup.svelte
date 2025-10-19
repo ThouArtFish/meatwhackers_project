@@ -106,6 +106,7 @@
       { type: "evidence", value: data.evidence },
       { type: "total", value: data.total }
     ]);
+  }
 }
 
   // people, names, businesses, dates, evidence
@@ -191,13 +192,12 @@
         }
         popup.style.display = 'block';
 
-        // click anywhere else closes popup
         function onDocClick(e: MouseEvent) {
-        const target = e.target as Node;
-        if (!popup.contains(target)) {
-          popup.style.display = 'none';
-          document.removeEventListener('click', onDocClick);
-        }
+          const target = e.target as Node;
+          if (!popup.contains(target)) {
+            popup.style.display = 'none';
+            document.removeEventListener('click', onDocClick);
+          }
         }
         // small timeout so the same click that opened doesn't immediately close it
         setTimeout(() => document.addEventListener('click', onDocClick), 0);
@@ -207,7 +207,7 @@
       function highlightPhrase(textToFind: string, type: string) {
         if (!textToFind || typeof textToFind !== 'string') return;
         const search = textToFind.trim();
-        if (!search) return;
+      if (!search) return;
         const searchLower = search.toLowerCase();
         const textNodes = collectTextNodesInArticleParagraphs();
 
@@ -226,7 +226,7 @@
           const start = idx;
           const end = idx + search.length;
 
-          // split at end first, then at start so the middle node is the match
+      // split at end first, then at start so the middle node is the match
           const after = node.splitText(end); // node now contains [..start..match]
           const matchNode = node.splitText(start); // matchNode contains only the matched text
 
@@ -486,7 +486,7 @@
       }
     })
 
-    return await res.then((injectionResults) => {
+    return await res.then((injectionResults: any) => {
       for (const frameResult of injectionResults) {
         return frameResult.result as boolean;
       }

@@ -386,5 +386,70 @@ def votes_by_url(url: str = Query(..., description="Article URL")):
         "total_votes": total_votes
     }
 
+@app.post("/articles/upvotes")
+def adjust_upvotes(url: str = Query(..., description="Article URL"), change: int = Query(..., description="Use 1 to increment or -1 to decrement")):
+    if change not in (1, -1):
+        raise HTTPException(status_code=400, detail="change must be 1 or -1")
+
+    conn = sqlite3.connect("factcheck.db")
+    c = conn.cursor()
+
+    # Find article by URL
+    c.execute("SELECT id FROM factcheck_articles WHERE url = ?", (url,))
+    row = c.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Article not found")
+    article_id = row[0]
+
+    # Fetch current upvotes (create row if missing)
+    c.execute("SELECT upvotes FROM article_votes WHERE article_id = ?", (article_id,))
+    row = c.fetchone()
+    if row is None:
+        current = 0
+        new = max(0, current + change)
+        c.execute("INSERT INTO article_votes (article_id, upvotes, downvotes) VALUES (?, ?, ?)", (article_id, new, 0))
+    else:
+        current = row[0] or 0
+        new = max(0, current + change)
+        c.execute("UPDATE article_votes SET upvotes = ? WHERE article_id = ?", (new, article_id))
+
+    conn.commit()
+    conn.close()
+    return {"url": url, "article_id": article_id, "upvotes": new}
+
+
+@app.post("/articles/downvotes")
+def adjust_downvotes(url: str = Query(..., description="Article URL"), change: int = Query(..., description="Use 1 to increment or -1 to decrement")):
+    if change not in (1, -1):
+        raise HTTPException(status_code=400, detail="change must be 1 or -1")
+
+    conn = sqlite3.connect("factcheck.db")
+    c = conn.cursor()
+
+    # Find article by URL
+    c.execute("SELECT id FROM factcheck_articles WHERE url = ?", (url,))
+    row = c.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Article not found")
+    article_id = row[0]
+
+    # Fetch current downvotes (create row if missing)
+    c.execute("SELECT downvotes FROM article_votes WHERE article_id = ?", (article_id,))
+    row = c.fetchone()
+    if row is None:
+        current = 0
+        new = max(0, current + change)
+        c.execute("INSERT INTO article_votes (article_id, upvotes, downvotes) VALUES (?, ?, ?)", (article_id, 0, new))
+    else:
+        current = row[0] or 0
+        new = max(0, current + change)
+        c.execute("UPDATE article_votes SET downvotes = ? WHERE article_id = ?", (new, article_id))
+
+    conn.commit()
+    conn.close()
+    return {"url": url, "article_id": article_id, "downvotes": new}
+
 if __name__ == "__main__":
     uvicorn.run("server:app", host='127.0.0.1', port=8000, reload=True, timeout_keep_alive=300)
