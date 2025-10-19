@@ -59,18 +59,21 @@
     }
 
     const data = await res.json();
+    console.log(data)
 
     const highlightedSentences: Highlight[] = data.highlighted_sentences as Highlight[];
+    const highlightedWords: Highlight[] = data.highlighted_words as Highlight[];
+    const highlights: Highlight[] = highlightedSentences.concat(highlightedWords);
     const totalRating: number = data.total as number;
     const gemeniResponse: string = data.response as string;
 
-    highlightSentences(highlightedSentences);
+    highlight(highlights);
     displayHeaderIcons(totalRating, gemeniResponse);
     state = "completed";
   }
 
   // people, names, businesses, dates, evidence
-  async function highlightSentences(highlights: Highlight[]) {
+  async function highlight(highlights: Highlight[]) {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
     chrome.scripting.executeScript({
