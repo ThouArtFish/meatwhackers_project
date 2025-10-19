@@ -327,7 +327,6 @@ def get_votes(article_id: int):
         raise HTTPException(status_code=404, detail="Article not found or no votes yet")
     return {"article_id": article_id, "upvotes": result[0], "downvotes": result[1]}
 
-
 @app.post("/articles/{article_id}/upvote")
 def upvote_article(article_id: int):
     conn = sqlite3.connect("factcheck.db")
@@ -353,9 +352,39 @@ def downvote_article(article_id: int):
     conn.close()
     return {"message": f"Article {article_id} downvoted successfully"}
 
+@app.get("/votes_by_url")
+def votes_by_url(url: str = Query(..., description="Article URL")):
+    conn = sqlite3.connect("factcheck.db")
+    c = conn.cursor()
 
+    # Find article by URL
+    c.execute("SELECT id FROM factcheck_articles WHERE url = ?", (url,))
+    row = c.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Article not found")
 
+    article_id = row[0]
 
+    # Get votes for that article
+    c.execute("SELECT upvotes, downvotes FROM article_votes WHERE article_id = ?", (article_id,))
+    votes = c.fetchone()
+    conn.close()
+
+    if not votes:
+        upvotes = 0
+        downvotes = 0
+    else:
+        upvotes, downvotes = votes
+
+    total_votes = (upvotes or 0) + (downvotes or 0)
+    return {
+        "url": url,
+        "article_id": article_id,
+        "upvotes": upvotes,
+        "downvotes": downvotes,
+        "total_votes": total_votes
+    }
 
 if __name__ == "__main__":
     uvicorn.run("server:app", host='127.0.0.1', port=8000, reload=True, timeout_keep_alive=300)

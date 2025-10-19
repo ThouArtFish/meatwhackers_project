@@ -363,7 +363,53 @@
     });
   }
 
+  // https://www.bbc.co.uk/news/articles/c62e7xz02dpo
+  function getArticleId(url: string): string | null {
+    try {
+      const u = new URL(url);
+      const path = u.pathname;
+
+      // common pattern: /.../articles/{articleId}
+      const m = path.match(/\/articles\/([^\/?#]+)/i);
+      if (m && m[1]) return m[1];
+
+      // fallback: last non-empty path segment if it looks like an id (alphanumeric)
+      const segments = path.split('/').filter(Boolean);
+      if (segments.length) {
+        const last = segments[segments.length - 1];
+        if (/^[a-z0-9_-]+$/i.test(last)) return last;
+      }
+
+      // check common query params
+      const idFromQuery = u.searchParams.get('id') || u.searchParams.get('articleId') || u.searchParams.get('guid');
+      if (idFromQuery) return idFromQuery;
+
+    } catch (e) {
+      // invalid URL
+    }
+    return null;
+  }
+
   onMount(async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    
+    let votes;
+    try {
+      votes = await fetch(`${PYTHON_SERVER_URL}/votes_by_url?url=${encodeURIComponent(tab.url!)}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+    } catch (error) {
+      console.error(error)
+      return;
+    }
+
+    const json = await votes.json()
+    upvoteCount = json.upvotes
+    downvoteCount = json.downvotes
+
     const tagged = await checkTag();
     if (tagged) {
       state = "completed";
