@@ -32,6 +32,7 @@
   let state: FactCheckState = "ready";
   let upvoteCount: number = 0;
   let downvoteCount: number = 0;
+  let showFeedback: boolean = false;
 
   async function upvote() {
     upvoteCount += 1;
@@ -541,22 +542,24 @@
   onMount(async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     
-    let votes;
     try {
-      votes = await fetch(`${PYTHON_SERVER_URL}/votes_by_url?url=${encodeURIComponent(tab.url!)}`, {
+      const votes = await fetch(`${PYTHON_SERVER_URL}/votes_by_url?url=${encodeURIComponent(tab.url!)}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json"
         }
       });
+
+      if (votes.status === 200) {
+        const json = await votes.json()
+        upvoteCount = json.upvotes
+        downvoteCount = json.downvotes
+        showFeedback = true; 
+      }
     } catch (error) {
       console.error(error)
-      return;
+      showFeedback = false;
     }
-
-    const json = await votes.json()
-    upvoteCount = json.upvotes
-    downvoteCount = json.downvotes
 
     const tagged = await checkTag();
     if (tagged) {
@@ -578,22 +581,24 @@
   </button>
 {/if}
 
-<div class="feedback-container">
-  <div class="ratings-container">
-    <div class="count-container">
-      <button class="rating-button" on:click={upvote}><ThumbsUp /></button>
-      <span class="count">{upvoteCount}</span>
-    </div>
-    
-    <div class="count-container">
-      <button class="rating-button" on:click={downvote}><ThumbsDown /></button>
-      <span class="count">{downvoteCount}</span>
+{#if showFeedback}
+  <div class="feedback-container">
+    <div class="ratings-container">
+      <div class="count-container">
+        <button class="rating-button" on:click={upvote}><ThumbsUp /></button>
+        <span class="count">{upvoteCount}</span>
+      </div>
+      
+      <div class="count-container">
+        <button class="rating-button" on:click={downvote}><ThumbsDown /></button>
+        <span class="count">{downvoteCount}</span>
+      </div>
+
     </div>
 
+    <input class="comment-input" type="text" placeholder="Add a comment..." />
   </div>
-
-  <input class="comment-input" type="text" placeholder="Add a comment..." />
-</div>
+{/if}
 
 <a href="about.html" target="_blank">Click here to learn more</a>
 
