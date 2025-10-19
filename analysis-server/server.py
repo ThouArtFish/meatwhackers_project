@@ -24,8 +24,7 @@ def init_db():
             polarity REAL,
             evidence REAL,
             total REAL,
-            highlighted_sentences TEXT,
-            highlighted_words TEXT,
+            highlighted_phrases
             related_articles TEXT,
             response TEXT
         )
@@ -87,9 +86,8 @@ def save_factcheck_result(data: dict):
     c.execute('''
         INSERT INTO factcheck_articles (
             title, url, journalist, articles_by_journalist, subjectivity,
-            polarity, evidence, total, highlighted_sentences,
-            highlighted_words, related_articles, response
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            polarity, evidence, total, highlighted_phrases, related_articles, response
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         data["title"],
         data["url"],
@@ -99,8 +97,8 @@ def save_factcheck_result(data: dict):
         data.get("polarity"),
         data.get("evidence"),
         data.get("total"),
-        json.dumps(data.get("highlighted_sentences")),
-        json.dumps(data.get("highlighted_words")),
+        json.dumps(data.get("highlighted_phrases")),
+        
         json.dumps(data.get("related_articles")),
         data.get("response")
     ))
@@ -157,7 +155,7 @@ def fact_check_headlines():
             # Otherwise fetch, analyze, and save
             text = scraper.fetch_article_text(headline)
             journalist_info = scraper.get_journalist(headline)
-            subjectivity, polarity, evidence, total, _, _ = early_algorithm2.TextAnalyzer(text,journalist_info[1]).report()
+            subjectivity, polarity, evidence, total, _ = early_algorithm2.TextAnalyzer(text,journalist_info[1]).report()
 
             # Save to DB
             c.execute('''
@@ -191,7 +189,7 @@ def get_factcheck_results():
     columns = [
         "id", "title", "url", "journalist", "articles_by_journalist",
         "subjectivity", "polarity", "evidence", "total",
-        "highlighted_sentences", "highlighted_words", "related_articles", "response"
+        "highlighted_phrases", "related_articles", "response"
     ]
     return [dict(zip(columns, row)) for row in rows]
  
@@ -235,7 +233,7 @@ def fact_check_article(url: str = Query(..., description="BBC article URL")):
         conn.close()
         raise HTTPException(status_code=400, detail="Could not fetch article content.")
 
-    subjectivity, polarity, evidence, total, highlighted_sentences, highlighted_words = early_algorithm2.TextAnalyzer(
+    subjectivity, polarity, evidence, total, highlighted_phrases = early_algorithm2.TextAnalyzer(
         text, journalist_info[1] if journalist_info else None
     ).report()
 
@@ -259,8 +257,7 @@ def fact_check_article(url: str = Query(..., description="BBC article URL")):
         "polarity": polarity,
         "evidence": evidence,
         "total": total,
-        "highlighted_sentences": highlighted_sentences,
-        "highlighted_words": highlighted_words,
+        "highlighted_phrases": highlighted_phrases,
         "related_articles": related_articles_json,
         "response": response
     }

@@ -1,6 +1,23 @@
 import requests
 from bs4 import BeautifulSoup
 import re
+import requests
+import time
+from requests.exceptions import RequestException, Timeout
+
+def safe_get(url, retries=3, timeout=10):
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+    for attempt in range(retries):
+        try:
+            resp = requests.get(url, headers=headers, timeout=timeout)
+            resp.raise_for_status()
+            return resp.text
+        except Timeout:
+            print(f"Timeout fetching {url}, attempt {attempt+1}/{retries}")
+        except RequestException as e:
+            print(f"Error fetching {url}: {e}")
+        time.sleep(1)
+    return None
 
 
 class BaseScraper:
@@ -13,14 +30,7 @@ class BaseScraper:
         self.related_articles = []
 
     def get_page(self, url):
-        """Fetch the HTML content of a URL."""
-        try:
-            response = requests.get(url, timeout=10)
-            response.raise_for_status()
-            return response.text
-        except requests.RequestException as e:
-            print(f"Request failed for {url}: {e}")
-            return None
+        return safe_get(url,retries=3,timeout=10)
 
     def parse_html(self, html):
         """Parse HTML into a BeautifulSoup object."""
@@ -106,8 +116,10 @@ class BBCBusinessScraper(BaseScraper):
             return None
         formatted_name = journalist_name.replace(" ", "+")
         url = f"https://www.bbc.co.uk/search?q={formatted_name}&d=NEWS_PS"
-        journalist_page = requests.get(url)
-        journalist_soup = BeautifulSoup(journalist_page.text,'html.parser')
+        journalist_page = safe_get(url)
+        if not journalist_page:
+            return None
+        journalist_soup = BeautifulSoup(journalist_page, 'html.parser')
         last_text = journalist_soup.select_one('ol[role="list"] li:last-child div').get_text(strip=True)
         return (journalist_name,int(last_text))
         
@@ -152,16 +164,20 @@ class BBCArticleScraper(BaseScraper):
             return None
         formatted_name = journalist_name.replace(" ", "+")
         url = f"https://www.bbc.co.uk/search?q={formatted_name}&d=NEWS_PS"
-        journalist_page = requests.get(url)
-        journalist_soup = BeautifulSoup(journalist_page.text, 'html.parser')
+        journalist_page = safe_get(url)
+        if not journalist_page:
+            return None
+        journalist_soup = BeautifulSoup(journalist_page, 'html.parser')
         last_text = journalist_soup.select_one('ol[role="list"] li:last-child div').get_text(strip=True)
         return (journalist_name, int(last_text))
     
     def get_related_articles(self):
         self.title = self.get_heading()
         newsURL = f'https://www.bing.com/news/search?q={self.title}'
-        newsPage = requests.get(newsURL)
-        newsSoup = BeautifulSoup(newsPage.text,'html.parser')
+        newsPage = safe_get(newsURL)
+        if not newsPage:
+            return []
+        newsSoup = BeautifulSoup(newsPage, 'html.parser')
         cards = newsSoup.find_all('div',class_="news-card-body card-with-cluster")
 
         for card in cards[:3]:
