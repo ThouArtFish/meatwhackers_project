@@ -133,16 +133,16 @@ def MainScore(scraper: BBCArticleScraper):
         evidence = evidence / ecount
         polarity = max(min(polarity, 1), -1)  # clamp just in case
 
-        # --- Scale subjectivity from [0,1] → [-1,1]
+        # Scale subjectivity from [0,1] → [-1,1]
         subjectivity_scaled = (subjectivity * 2) - 1
 
-        # --- Evidence should already be roughly [-1,1], but clamp it safely
+        # Making sure evidence between [-1,1 ]
         evidence_scaled = max(min(evidence, 1), -1)
 
-        # --- Compute weighted or simple average
+        #  Compute weighted or simple average
         total = (subjectivity_scaled + polarity + evidence_scaled) / 3
 
-        # --- Ensure total stays between -1 and 1
+        # Ensure total stays between -1 and 1
         total = max(min(total, 1), -1)
 
         # Round values for readability
