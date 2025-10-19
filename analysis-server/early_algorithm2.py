@@ -72,7 +72,7 @@ class TextAnalyzer:
         if score == 0.95:
             self.highlighted_sentences["direct quote"].append(sentence)
         elif score == 1.0:
-            self.highlighted_sentences.setdefault("official statement", []).append(sentence)
+            self.highlighted_sentences.setdefault("fact", []).append(sentence)
         elif score == 0.8:
             self.highlighted_sentences.setdefault("official statement", []).append(sentence)
         elif score == 0.7:
