@@ -304,11 +304,11 @@
   // returns correct icon depending on rating
   function findTierImage(rating: number) {
     switch (true) {
-      case rating < 0.1:
+      case rating < -0.3:
         return "cap.svg";
       case rating < 0.3:
         return "sus.svg";
-      case rating < 0.5:
+      case rating < 0.42:
         return "mid.svg";
       default:
         return "goated.svg";
@@ -339,11 +339,11 @@
         // Inline version of findTierImage so it exists in the page context
         function findTierImage(rating: number) {
           switch (true) {
-            case rating < 0.1:
+            case rating < -0.3:
               return "cap.svg";
             case rating < 0.3:
               return "sus.svg";
-            case rating < 0.5:
+            case rating < 0.42:
               return "mid.svg";
             default:
               return "goated.svg";
