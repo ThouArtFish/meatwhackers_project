@@ -530,79 +530,78 @@
         summary.innerText = geminiResponse;
 
 
-        function clickCheck(e: MouseEvent) {
+        let nodeMap = [];
+        let mouse_pos = { x: 0, y: 0 };
+        const canvas = document.createElement("canvas");
+        canvas.width = 600;
+        canvas.height = 400;
+        canvas.style.backgroundColor = "white";
+        mainHeading.insertAdjacentElement("afterend", canvas);
+        canvas.addEventListener("click", (e) => {
           const rect = canvas.getBoundingClientRect();
-
           mouse_pos.x = e.clientX - rect.left;
           mouse_pos.y = e.clientY - rect.top;
 
-          justClicked = true;
-        }
-
-        function drawFrame(canvas: HTMLCanvasElement, articles: {title: string, link: string}[]) {
+          for (const node of nodeMap) {
+            const dist = Math.hypot(mouse_pos.x - node.x, mouse_pos.y - node.y);
+            if (dist <= node.r) {
+              window.open(node.link, "_blank");
+              break;
+            }
+          }
+        });
+        drawFrame(canvas, articles);
+        function drawFrame(canvas, articles) {
           const ctx = canvas.getContext("2d");
-          if (!ctx) { return }
+          if (!ctx) return;
 
           ctx.clearRect(0, 0, canvas.width, canvas.height);
-          let cx = canvas.width / 2;
-          let cy = canvas.height / 2;
-          let start_angle = (2 * Math.PI) / articles.length;
+          const cx = canvas.width / 2;
+          const cy = canvas.height / 2;
+          const radius = 0.3 * Math.min(canvas.width, canvas.height);
+          const angleStep = (2 * Math.PI) / articles.length;
+
           ctx.fillStyle = "#4f46e5";
           ctx.strokeStyle = "#10b981";
           ctx.lineWidth = 3;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.font = "18px";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.font = "18px sans-serif";
+
+          // Draw center node
+          ctx.beginPath();
+          ctx.arc(cx, cy, 10, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.closePath();
+          ctx.strokeText("Related Articles", cx, cy - 25);
 
           for (let i = 0; i < articles.length; i++) {
-            let x = cx + Math.cos(start_angle * (i + 1)) * 0.3 * canvas.width
-            let y = cy + Math.sin(start_angle * (i + 1)) * 0.3 * canvas.height
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.lineTo(cx, cy);
-            ctx.stroke();
-            ctx.closePath();
+            const angle = i * angleStep;
+            const x = cx + Math.cos(angle) * radius;
+            const y = cy + Math.sin(angle) * radius;
 
+            // Line from center to article
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+
+            // Article circle
             ctx.beginPath();
             ctx.arc(x, y, 10, 0, 2 * Math.PI);
             ctx.fill();
             ctx.closePath();
 
-            ctx.strokeText(articles[i].title, x, y)
+            // Article title
+            const textOffset = 25; // push text outward a bit
+            const textX = cx + Math.cos(angle) * (radius + textOffset);
+            const textY = cy + Math.sin(angle) * (radius + textOffset);
+            ctx.strokeText(articles[i].title, textX, textY);
 
-            if (justClicked) {
-              justClicked = false
-              let cont = {
-                l: x - 10,
-                r: x + 10,
-                u: y - 10,
-                d: y + 10
-              }
-              if (mouse_pos.x > cont.l && mouse_pos.x < cont.r && mouse_pos.y > cont.u && mouse_pos.y < cont.d) {
-                window.open(articles[i].link)
-              }
-            }
+            // Save node data for click detection
+            nodeMap.push({ x, y, r: 10, link: articles[i].link });
           }
-
-        ctx.beginPath();
-        ctx.arc(cx, cy, 10, 0, 2 * Math.PI);
-        ctx.fill();
-        ctx.closePath();
-
-        ctx.strokeText("Related Articles", cx, cy)
-      }
-        // Article node map
-        let canvas = document.createElement("canvas")
-        canvas.height = 400
-        canvas.width = 600
-        canvas.style.backgroundColor = "white";
-        mainHeading.insertAdjacentElement("afterend", canvas)
-        window.addEventListener("mousedown", (e) => {clickCheck(e)})
-        drawFrame(canvas, articles)
-      },
-      args: [stats, imageSrcs, geminiResponse, articles]
-    })
-  }
+        }
 
   async function tag() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
