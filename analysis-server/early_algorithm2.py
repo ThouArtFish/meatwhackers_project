@@ -20,8 +20,7 @@ class TextAnalyzer:
             truncation=True
         )
 
-        
-
+   
         self.categories = [
                 
                     "direct_quote",       # X said, exact quote
@@ -264,7 +263,16 @@ class TextAnalyzer:
         total = max(min(total, 1), -1)
 
         return subjectivity, polarity, evidence, round(total, 2), self.get_highlighted_phrases()
-#ss
+    
+    def classify_phrases_parallel(self):
+        from concurrent.futures import ThreadPoolExecutor
+
+        def classify_phrase(phrase):
+            return self.classifier(phrase, self.categories)
+
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            return list(executor.map(classify_phrase, self.phrases))
+    #ss
 #sadasdas
 if __name__ == '__main__':
     text = '''The US State Department says it has "credible reports" that Hamas is planning an "imminent" attack on civilians in Gaza, which it says would violate the ceasefire agreement.
@@ -314,6 +322,8 @@ The Israeli military launched a campaign in Gaza in response to the 7 October 20
 At least 68,000 people have been killed by Israeli attacks in Gaza since then, according to the Hamas-run health ministry, whose figures are seen by the UN as reliable.
 
 In September, a UN commission of inquiry said Israel had committed genocide against Palestinians in Gaza. Israel categorically rejected the report as "distorted and false".'''
+    
     analyzer = TextAnalyzer(text, 29)
+   
     S,P,E,T,HP= analyzer.report()
     print(S,P,E,T,HP)

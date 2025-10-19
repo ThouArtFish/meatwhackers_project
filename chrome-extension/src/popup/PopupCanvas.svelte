@@ -382,6 +382,7 @@
       canvasDisplay = false;
       articleArray = [];
       window.removeEventListener("keydown", quitCheck);
+      window.removeEventListener("mousedown", clickCheck);
     }
   }
 
@@ -407,11 +408,11 @@
     ctx.lineWidth = 2;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = "7px";
+    ctx.font = "8px";
 
     for (let i = 0; i < articleArray.length; i++) {
-      let x = cx + Math.cos(start_angle * (i + 1))
-      let y = cy + Math.sin(start_angle * (i + 1))
+      let x = cx + Math.cos(start_angle * (i + 1)) * 0.2 * canvas.width
+      let y = cy + Math.sin(start_angle * (i + 1)) * 0.2 * canvas.height
       ctx.beginPath();
       ctx.moveTo(x, y);
       ctx.lineTo(cx, cy);
@@ -423,7 +424,7 @@
       ctx.fill();
       ctx.closePath();
 
-      ctx.strokeText(articleArray[i][0], x, y, 12)
+      ctx.strokeText(articleArray[i][0], x, y)
 
       if (justClicked) {
         justClicked = false
@@ -434,7 +435,7 @@
           d: y + 10
         }
         if (mouse_pos.x > cont.l && mouse_pos.x < cont.r && mouse_pos.y > cont.u && mouse_pos.y < cont.d) {
-          window.open(articleArray[i][1], "_blank")
+          window.open(articleArray[i][1])
         }
       }
     }
