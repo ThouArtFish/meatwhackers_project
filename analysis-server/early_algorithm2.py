@@ -156,7 +156,7 @@ class TextAnalyzer:
 
         total = max(min(total, 1), -1)
 
-        return subjectivity, polarity, evidence, round(total, 2), highlighted_sentences, highlighted_words
+        return subjectivity, polarity, evidence, round(total, 2), highlighted_sentences + highlighted_words
 #ss
 #sadasdas
 if __name__ == '__main__':
@@ -209,5 +209,5 @@ The Israeli military launched a campaign in Gaza in response to the 7 October 20
 At least 67,900 people have been killed by Israeli attacks in Gaza since then, according to the territory's Hamas-run health ministry, whose figures are seen by the UN as reliable.'''
     
     analyzer = TextAnalyzer(text, 29)
-    S,P,E,T,HS,HW= analyzer.report()
-    print(S,P,E,T,HS,HW)
+    S,P,E,T,HP= analyzer.report()
+    print(S,P,E,T,HP)
