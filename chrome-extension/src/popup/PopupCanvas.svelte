@@ -411,8 +411,8 @@
     ctx.font = "8px";
 
     for (let i = 0; i < articleArray.length; i++) {
-      let x = cx + Math.cos(start_angle * (i + 1)) * 0.2 * canvas.width
-      let y = cy + Math.sin(start_angle * (i + 1)) * 0.2 * canvas.height
+      let x = cx + Math.cos(start_angle * (i + 1)) * 0.3 * canvas.width
+      let y = cy + Math.sin(start_angle * (i + 1)) * 0.3 * canvas.height
       ctx.beginPath();
       ctx.moveTo(x, y);
       ctx.lineTo(cx, cy);
@@ -424,18 +424,18 @@
       ctx.fill();
       ctx.closePath();
 
-      ctx.strokeText(articleArray[i][0], x, y)
+      ctx.strokeText(articleArray[i].title, x, y, 20)
 
       if (justClicked) {
         justClicked = false
         let cont = {
-          l: x,
+          l: x - 10,
           r: x + 10,
-          u: y,
+          u: y - 10,
           d: y + 10
         }
         if (mouse_pos.x > cont.l && mouse_pos.x < cont.r && mouse_pos.y > cont.u && mouse_pos.y < cont.d) {
-          window.open(articleArray[i][1])
+          window.open(articleArray[i].link)
         }
       }
     }
@@ -445,7 +445,7 @@
     ctx.fill();
     ctx.closePath();
 
-    ctx.strokeText("Related Articles", cx, cy, 12)
+    ctx.strokeText("Related Articles", cx, cy, 20)
 
     requestAnimationFrame(drawFrame)
   }
