@@ -110,6 +110,49 @@ class TextAnalyzer:
 
         return highlighted_list
 
+
+    def get_highlighted_phrases(self):
+        final_highlighted = []
+
+        for phrase in self.phrases:
+            # 1. Check if the sentence is highlighted
+            for typ, sentences in self.highlighted_sentences.items():
+                if phrase in sentences:
+                    final_highlighted.append({"text": phrase, "type": typ})
+                    break  # stop after finding the type
+
+            # 2. Get entities in this specific sentence
+            doc_phrase = self.nlp(phrase)
+            for ent in doc_phrase.ents:
+                label = ent.label_
+                word_type = None
+                if label == "PERSON":
+                    word_type = "person"
+                elif label == "ORG":
+                    word_type = "org"
+                elif label == "GPE":
+                    word_type = "gpe"
+                elif label == "DATE":
+                    if any(char.isdigit() for char in ent.text) or (ent.text.lower() in self.months and len(ent.text) > 2):
+                        word_type = "date"
+                elif label == "TIME":
+                    word_type = "time"
+                elif label == "MONEY":
+                    word_type = "money"
+                elif label == "PERCENT":
+                    word_type = "percent"
+                elif label == "CARDINAL":
+                    word_type = "cardinal"
+                elif label == "LAW":
+                    word_type = "law"
+                elif label == "EVENT":
+                    word_type = "event"
+
+                if word_type:
+                    final_highlighted.append({"text": ent.text, "type": word_type})
+
+        return final_highlighted
+    
     # --- Aggregate Score ---
     def calculate_score(self):
         sub_scores = sum(self.get_subjectivity(p) for p in self.phrases)
@@ -131,12 +174,8 @@ class TextAnalyzer:
     # --- Main Report ---
     def report(self):
         subjectivity, polarity, evidence, total = self.calculate_score()
-        highlighted_sentences = [
-                {"text": s, "type": typ} 
-                for typ, sentences in self.highlighted_sentences.items() 
-                for s in sentences
-            ]
-
+    
+                
         highlighted_words = self.get_highlighted_words()
         #add score per evidence
         total += 0.01 * len(highlighted_words)
@@ -156,7 +195,7 @@ class TextAnalyzer:
 
         total = max(min(total, 1), -1)
 
-        return subjectivity, polarity, evidence, round(total, 2), highlighted_sentences + highlighted_words
+        return subjectivity, polarity, evidence, round(total, 2), self.get_highlighted_phrases()
 #ss
 #sadasdas
 if __name__ == '__main__':
