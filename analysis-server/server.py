@@ -24,7 +24,7 @@ def init_db():
             polarity REAL,
             evidence REAL,
             total REAL,
-            highlighted_phrases
+            highlighted_phrases,
             related_articles TEXT,
             response TEXT
         )
@@ -155,7 +155,7 @@ def fact_check_headlines():
             # Otherwise fetch, analyze, and save
             text = scraper.fetch_article_text(headline)
             journalist_info = scraper.get_journalist(headline)
-            subjectivity, polarity, evidence, total, _ = early_algorithm2.TextAnalyzer(text,journalist_info[1]).report()
+            subjectivity, polarity, evidence, total, _ = early_algorithm2.TextAnalyzer(text,(journalist_info[1]if journalist_info else 20)).report()
 
             # Save to DB
             c.execute('''
