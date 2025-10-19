@@ -313,7 +313,7 @@
   async function displayHeaderIconsHeadlines(stats: { type: string; value: number }[]) {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-    const tierImages = stats.map(stat => findTierImage(stat.value));
+    
     const imageSrcs = tierImages.map((tierImage) => chrome.runtime.getURL(`icons/${tierImage}`));
 
     await chrome.scripting.executeScript({
@@ -335,6 +335,7 @@
 
         promoLinks.forEach((link, i) => {
           // Make a container for the icons (same look as your displayHeaderIcons)
+          const tierImages = stats.map(stat => findTierImage(stat.value));
           const container = document.createElement("div");
           container.style.display = "flex";
           container.style.flexDirection = "column";
