@@ -6,7 +6,7 @@
 
   const PYTHON_SERVER_URL = "http://localhost:8000";
 
-  type HighlightType = "person" | "organization" | "date" | "evidence";
+  type HighlightType = "person" | "org" | "date" | "evidence";
 
   type Highlight = {
     text: string;
@@ -15,13 +15,11 @@
 
   type FactCheckState = "ready" | "factChecking" | "completed";
 
-
-
   const highlightColors: Record<HighlightType, string> = {
     person: "rgba(255, 0, 0, 0.5)",
-    organization: "rgba(0, 255, 0, 0.5)",
+    org: "rgba(0, 255, 0, 0.5)",
     date: "rgba(0, 0, 255, 0.5)",
-    evidence: "rgba(255, 255, 0, 0.5)"
+    evidence: "rgba(255, 255, 0, 0.5)",
   }
 
   let state: FactCheckState = "ready";
@@ -65,71 +63,171 @@
     console.log(data)
 
     const highlightedSentences: Highlight[] = data.highlighted_sentences as Highlight[];
-    const highlightedWords: Highlight[] = data.highlighted_words as Highlight[];
-    const highlights: Highlight[] = highlightedSentences.concat(highlightedWords);
+    const highlightedPhrases: Highlight[] = data.highlighted_phrases as Highlight[];
     const totalRating: number = data.total as number;
     const gemeniResponse: string = data.response as string;
 
-    highlight(highlights);
+    highlight(highlightedPhrases);
     displayHeaderIcons(totalRating, gemeniResponse);
     state = "completed";
     await tag();
   }
 
   // people, names, businesses, dates, evidence
-  async function highlight(highlights: Highlight[]) {
+  async function highlight(phrases: Highlight[]) {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
     chrome.scripting.executeScript({
       target: { tabId: tab.id! },
-      func: (highlights: Highlight[], highlightColors: Record<HighlightType, string>) => {
-        console.log("Highlighting paragraph with highlights:", highlights);
-
-        const paragraphs = document.getElementsByTagName("p");
-        for (const paragraph of paragraphs) {
-          const elements: HTMLElement[] = []
-          const splitPoints: number[] = [];
-
-          highlights.forEach((highlight) => {
-            const startIndex = paragraph.textContent!.indexOf(highlight.text);
-            if (startIndex !== -1) {
-              splitPoints.push(startIndex, startIndex + highlight.text.length);
+      func: (phrases: any[], highlightColors: Record<string, string>) => {
+        // small helper: collect all text nodes that are visible and not inside script/style
+        function collectTextNodes(root: Node) {
+          const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+            acceptNode(node) {
+              // ignore empty/whitespace-only text nodes
+              if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+              // ignore nodes inside script, style, textarea, input
+              let parent = node.parentElement;
+              while (parent) {
+                const tag = parent.tagName && parent.tagName.toLowerCase();
+                if (tag === 'script' || tag === 'style' || tag === 'textarea' || tag === 'input') {
+                  return NodeFilter.FILTER_REJECT;
+                }
+                parent = parent.parentElement;
+              }
+              return NodeFilter.FILTER_ACCEPT;
             }
           });
-          
-          for (let i = 0; i < splitPoints.length; i += 2) {
-            const start = splitPoints[i];
-            const end = splitPoints[i + 1];
-            const textBefore = paragraph.textContent!.substring(i === 0 ? 0 : splitPoints[i - 1], start);
-            if (textBefore) {
-              const textNode = document.createTextNode(textBefore);
-              elements.push(textNode as unknown as HTMLElement);
-            }
-            const highlight = highlights.find(h => paragraph.textContent!.substring(start, end) === h.text)!;
-            const span = document.createElement("span");
-            span.textContent = highlight.text;
-            span.style.backgroundColor = highlightColors[highlight.type];
-            span.style.cursor = "pointer";
-            span.onclick = () => {
-              alert(`Highlight: ${highlight.text}`);
-            }
-            
-            elements.push(span);
+          const nodes: Text[] = [];
+          let current = walker.nextNode();
+          while (current) {
+            nodes.push(current as Text);
+            current = walker.nextNode();
           }
+          return nodes;
+        }
 
-          // Append any remaining text after the last highlight
-          const lastEnd = splitPoints.length > 0 ? splitPoints[splitPoints.length - 1] : 0;
-          const remainingText = paragraph.textContent!.substring(lastEnd);
-          if (remainingText) {
-            const textNode = document.createTextNode(remainingText);
-            elements.push(textNode as unknown as HTMLElement);
+        // ensure a single popup element exists
+        function ensurePopup() {
+          let existing = document.getElementById('mw-fact-popup');
+          if (existing) return existing;
+          const popup = document.createElement('div');
+          popup.id = 'mw-fact-popup';
+          popup.style.position = 'absolute';
+          popup.style.zIndex = '2147483647';
+          popup.style.background = 'white';
+          popup.style.color = 'black';
+          popup.style.padding = '0.5rem';
+          popup.style.borderRadius = '0.5rem';
+          popup.style.boxShadow = '0 6px 18px rgba(0,0,0,0.2)';
+          popup.style.maxWidth = '320px';
+          popup.style.fontSize = '0.9rem';
+          popup.style.display = 'none';
+          document.body.appendChild(popup);
+          return popup;
+        }
+
+        function showPopup(content: string, x: number, y: number) {
+          const popup = ensurePopup();
+          popup.innerText = content;
+          popup.style.left = x + 'px';
+          // prefer above the click if there's space
+          const aboveY = y - popup.offsetHeight - 12;
+          if (aboveY > 0) {
+            popup.style.top = aboveY + 'px';
+          } else {
+            popup.style.top = (y + 12) + 'px';
           }
+          popup.style.display = 'block';
 
-          paragraph.innerHTML = ""; // Clear existing content
-          elements.forEach(el => paragraph.appendChild(el));
+          // click anywhere else closes popup
+          function onDocClick(e: MouseEvent) {
+            const target = e.target as Node;
+            if (!popup.contains(target)) {
+              popup.style.display = 'none';
+              document.removeEventListener('click', onDocClick);
+            }
+          }
+          // small timeout so the same click that opened doesn't immediately close it
+          setTimeout(() => document.addEventListener('click', onDocClick), 0);
+        }
+
+        // highlight a single phrase across text nodes using ranges / splitText
+        function highlightPhrase(textToFind: string, type: string) {
+          if (!textToFind || typeof textToFind !== 'string') return;
+          const search = textToFind.trim();
+          if (!search) return;
+          const searchLower = search.toLowerCase();
+          const textNodes = collectTextNodes(document.body);
+
+          for (let i = 0; i < textNodes.length; i++) {
+            let node = textNodes[i];
+            // keep searching within this text node while occurrences exist
+            let nodeTextLower = node.nodeValue ? node.nodeValue.toLowerCase() : '';
+            let idx = nodeTextLower.indexOf(searchLower);
+            while (idx !== -1) {
+              // compute offsets
+              const start = idx;
+              const end = idx + search.length;
+
+              // split at end first, then at start so the middle node is the match
+              const after = node.splitText(end); // node now contains [..start..match]
+              const matchNode = node.splitText(start); // matchNode contains only the matched text
+
+              // create wrapper span
+              const span = document.createElement('span');
+              span.className = 'mw-highlight';
+              span.dataset.mwType = type;
+              span.textContent = matchNode.data;
+              const color = (highlightColors && highlightColors[type]) ? highlightColors[type] : 'rgba(255,255,0,0.5)';
+              span.style.backgroundColor = color;
+              span.style.borderRadius = '0.2rem';
+              span.style.padding = '0 0.15rem';
+              span.style.cursor = 'pointer';
+              span.style.transition = 'outline 0.08s ease';
+
+              // click handler to show popup
+              span.addEventListener('click', (ev: MouseEvent) => {
+                ev.stopPropagation();
+                const content = `${type.toUpperCase()}: ${matchNode.data}`;
+                // position near click: use clientX/Y + page scroll
+                const x = ev.pageX;
+                const y = ev.pageY;
+                showPopup(content, x, y);
+              });
+
+              // replace the text node containing match with span
+              matchNode.parentNode!.replaceChild(span, matchNode);
+
+              // continue searching in the node after the match
+              node = after;
+              nodeTextLower = node.nodeValue ? node.nodeValue.toLowerCase() : '';
+              idx = nodeTextLower.indexOf(searchLower);
+            }
+          }
+        }
+
+        // iterate phrases and highlight them
+        for (const p of phrases) {
+          try {
+            highlightPhrase(p.text, p.type);
+          } catch (e) {
+            console.error('Highlight error for phrase', p, e);
+          }
+        }
+
+        // optional: add a small stylesheet for highlighted spans (if not already present)
+        if (!document.getElementById('mw-highlight-style')) {
+          const style = document.createElement('style');
+          style.id = 'mw-highlight-style';
+          style.textContent = `
+            .mw-highlight:hover { outline: 2px solid rgba(255,255,255,0.15); }
+            #mw-fact-popup { pointer-events: auto; }
+          `;
+          document.head.appendChild(style);
         }
       },
-      args: [highlights, highlightColors] // pass highlights as an argument
+      args: [phrases, highlightColors] // pass highlights as an argument
     })
   }
 
