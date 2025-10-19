@@ -365,34 +365,68 @@ def get_votes(link: str = Query(..., description="Article link")):
         "article_id": article_id,
         "link": link,
         "upvotes": result[0],
-        "downvotes": result[1]
+       "downvotes": result[1]
     }
 
 
-@app.post("/articles/{article_id}/upvote")
-def upvote_article(article_id: int):
+
+@app.post("/articles/upvote")
+def upvote_article(link: str = Query(..., description="Article link")):
     conn = sqlite3.connect("factcheck.db")
     c = conn.cursor()
-    c.execute("UPDATE article_votes SET upvotes = upvotes + 1 WHERE article_id=?", (article_id,))
-    if c.rowcount == 0:
+
+    # Find article by link
+    c.execute("SELECT id FROM factcheck_articles WHERE url = ?", (link,))
+    row = c.fetchone()
+
+    if not row:
         conn.close()
         raise HTTPException(status_code=404, detail="Article not found")
+
+    article_id = row[0]
+
+    # Ensure article_votes row exists
+    c.execute("SELECT article_id FROM article_votes WHERE article_id = ?", (article_id,))
+    if not c.fetchone():
+        # If no entry exists yet, initialize one
+        c.execute("INSERT INTO article_votes (article_id, upvotes, downvotes) VALUES (?, 0, 0)", (article_id,))
+
+    # Increment upvote
+    c.execute("UPDATE article_votes SET upvotes = upvotes + 1 WHERE article_id = ?", (article_id,))
     conn.commit()
     conn.close()
-    return {"message": f"Article {article_id} upvoted successfully"}
+
+    return {"message": f"Article '{link}' upvoted successfully", "article_id": article_id}
 
 
-@app.post("/articles/{article_id}/downvote")
-def downvote_article(article_id: int):
+
+@app.post("/articles/downvote")
+def downvote_article(link: str = Query(..., description="Article link")):
     conn = sqlite3.connect("factcheck.db")
     c = conn.cursor()
-    c.execute("UPDATE article_votes SET downvotes = downvotes + 1 WHERE article_id=?", (article_id,))
-    if c.rowcount == 0:
+
+    # Find article by link
+    c.execute("SELECT id FROM factcheck_articles WHERE url = ?", (link,))
+    row = c.fetchone()
+
+    if not row:
         conn.close()
         raise HTTPException(status_code=404, detail="Article not found")
+
+    article_id = row[0]
+
+    # Ensure article_votes row exists
+    c.execute("SELECT article_id FROM article_votes WHERE article_id = ?", (article_id,))
+    if not c.fetchone():
+        # If no entry exists yet, initialize one
+        c.execute("INSERT INTO article_votes (article_id, upvotes, downvotes) VALUES (?, 0, 0)", (article_id,))
+
+    # Increment downvote
+    c.execute("UPDATE article_votes SET downvotes = downvotes + 1 WHERE article_id = ?", (article_id,))
     conn.commit()
     conn.close()
-    return {"message": f"Article {article_id} downvoted successfully"}
+
+    return {"message": f"Article '{link}' downvoted successfully", "article_id": article_id}
 
 @app.get("/votes_by_url")
 def votes_by_url(url: str = Query(..., description="Article URL")):
