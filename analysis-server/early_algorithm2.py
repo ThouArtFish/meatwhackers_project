@@ -226,7 +226,11 @@ class TextAnalyzer:
         sub_count = len(self.phrases)
         evi_count = len(self.phrases)
 
-        polarity_score = TextBlob(self.text).polarity
+        # Get the raw polarity from TextBlob
+        raw_polarity = TextBlob(self.text).polarity  # -1 to 1
+
+        # Convert to neutral-rewarded scale
+        polarity_score = 1 - 2 * abs(raw_polarity)  # 1 = neutral, -1 = extreme sentiment
 
       
         subjectivity_scaled = (sub_scores / sub_count * 2) - 1
