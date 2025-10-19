@@ -1,5 +1,7 @@
 <script lang="ts">
   import Spinner from "./Spinner.svelte";
+  import ThumbsUp from './ThumbsUp.svelte'
+  import ThumbsDown from './ThumbsDown.svelte'
 
   const PYTHON_SERVER_URL = "http://localhost:8000";
 
@@ -20,6 +22,16 @@
   }
 
   let state: FactCheckState = "ready";
+  let upvoteCount: number = 0;
+  let downvoteCount: number = 0;
+
+  async function upvote() {
+    upvoteCount += 1;
+  }
+
+  async function downvote() {
+    downvoteCount += 1;
+  }
 
   // fact checks the current page the user has open
   // sends a request to the python server
@@ -170,10 +182,21 @@
 {:else if state === "completed"}
   <p>Fact check complete!</p>
 {:else}
-  <button on:click={factCheck}>
+  <button class="fact-check-button" on:click={factCheck}>
     Fact check this page
   </button>
 {/if}
+
+<div class="ratings-container">
+  <div class="count-container">
+    <button class="rating-button" on:click={upvote}><ThumbsUp /></button>
+    <span class="count">{upvoteCount}</span>
+  </div>
+  <div class="count-container">
+    <button class="rating-button" on:click={downvote}><ThumbsDown /></button>
+    <span class="count">{downvoteCount}</span>
+  </div>
+</div>
 
 <a href="about.html" target="_blank">Click here to learn more</a>
 
@@ -197,12 +220,26 @@
 
   a {
     font-size: 0.5rem;
-    margin: 0.5rem;
+    margin: 0.25rem;
     color: hsl(0, 0%, 70%);
     text-decoration: none;
   }
 
-  button {
+  button.rating-button {
+    transition: opacity 0.2s ease;
+    background-color: transparent;
+    border: none;
+    padding: 0.25rem;
+    opacity: 0.5;
+  }
+
+  button.rating-button:hover {
+    transition: opacity 0.2s ease;
+    opacity: 1.0;
+    cursor: pointer;
+  }
+
+  button.fact-check-button {
     transition: background-color 0.2s ease;
     background-color: rgba(255, 255, 255, 0.25);
     border-radius: 999px;
@@ -214,8 +251,25 @@
     padding-block: 0.5rem;
   }
   
-  button:hover {
+  button.fact-check-button:hover {
     transition: background-color 0.2s ease;
     background-color: rgba(255, 255, 255, 0.35);
+  }
+
+  .ratings-container {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .count-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.25rem;
   }
 </style>
