@@ -1,10 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Article Reliability Checker</title>
-</head>
 <body>
 
     <!-- Header -->
@@ -87,4 +80,100 @@
 </section>
 
 </body>
-</html>
+<style>
+  * {
+    color: #ffffff;
+    font-family: 'Noto Serif', serif;
+  }
+
+  :global(:root) {
+    background-color: #242424;
+  }
+
+  :global(body) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: start;
+    min-width: 20rem;
+  }
+
+  a {
+    font-size: 0.5rem;
+    margin: 0.25rem;
+    color: hsl(0, 0%, 70%);
+    text-decoration: none;
+  }
+
+  button.rating-button {
+    transition: opacity 0.2s ease;
+    background-color: transparent;
+    border: none;
+    padding: 0.25rem;
+    opacity: 0.5;
+  }
+
+  button.rating-button:hover {
+    transition: opacity 0.2s ease;
+    opacity: 1.0;
+    cursor: pointer;
+  }
+
+  button.fact-check-button {
+    transition: background-color 0.2s ease;
+    background-color: rgba(255, 255, 255, 0.25);
+    border-radius: 999px;
+    outline-width: 1px;
+    outline-style: solid;
+    outline-color: #ffffff;
+    border-style: none;
+    padding-inline: 1rem;
+    padding-block: 0.5rem;
+  }
+  
+  button.fact-check-button:hover {
+    transition: background-color 0.2s ease;
+    background-color: rgba(255, 255, 255, 0.35);
+  }
+
+  .ratings-container {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .count-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .feedback-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    width: 100%;
+  }
+
+  .comment-input {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    width: 70%;
+    border-radius: 0.5rem;
+    border: none;
+    outline-width: 1px;
+    outline-style: solid;
+    outline-color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+  }
+</style>
+
