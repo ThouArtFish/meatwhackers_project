@@ -195,5 +195,22 @@
     background-color: rgba(255, 255, 255, 0.1);
     color: #ffffff;
   }
+  section {
+  width: 100%;
+  max-width: 800px;
+  padding: 1rem;
+  margin-bottom: 2rem;
+}
+
+section h2, section h3 {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+section p, section ul, section ol {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
 </style>
 
