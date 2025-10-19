@@ -22,6 +22,8 @@
 
   type FactCheckState = "ready" | "factChecking" | "completed";
 
+  type VoteState = "none" | "upvote" | "downvote"
+
   const highlightColors: Record<HighlightType, string> = {
     person: "rgba(255, 0, 0, 0.5)",
     org: "rgba(0, 255, 0, 0.5)",
@@ -33,13 +35,15 @@
   let upvoteCount: number = 0;
   let downvoteCount: number = 0;
   let showFeedback: boolean = false;
+  let voteState: VoteState = "none"
+  let comments: string[] = []
 
   async function upvote() {
-    upvoteCount += 1;
+    voteState = "upvote"
   }
 
   async function downvote() {
-    downvoteCount += 1;
+    voteState = "downvote"
   }
 
   // fact checks the current page the user has open
@@ -304,11 +308,11 @@
   // returns correct icon depending on rating
   function findTierImage(rating: number) {
     switch (true) {
-      case rating < 0.1:
+      case rating < -0.3:
         return "cap.svg";
       case rating < 0.3:
         return "sus.svg";
-      case rating < 0.5:
+      case rating < 0.42:
         return "mid.svg";
       default:
         return "goated.svg";
@@ -339,11 +343,11 @@
         // Inline version of findTierImage so it exists in the page context
         function findTierImage(rating: number) {
           switch (true) {
-            case rating < 0.1:
+            case rating < -0.3:
               return "cap.svg";
             case rating < 0.3:
               return "sus.svg";
-            case rating < 0.5:
+            case rating < 0.42:
               return "mid.svg";
             default:
               return "goated.svg";
@@ -561,6 +565,24 @@
       showFeedback = false;
     }
 
+    try {
+      const res = await fetch(`${PYTHON_SERVER_URL}/votes_by_url?link=${encodeURIComponent(tab.url!)}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (res.status === 200) {
+        const json = await res.json()
+        comments = json.comments
+        showFeedback = false; 
+      }
+    } catch (error) {
+      console.error(error)
+      showFeedback = false;
+    }
+
     const tagged = await checkTag();
     if (tagged) {
       state = "completed";
@@ -696,5 +718,9 @@
     outline-color: #ffffff;
     background-color: rgba(255, 255, 255, 0.1);
     color: #ffffff;
+  }
+
+  .full {
+    opacity: 1;
   }
 </style>

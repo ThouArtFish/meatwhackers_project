@@ -266,16 +266,20 @@ def fact_check_article(url: str = Query(..., description="BBC article URL")):
     conn.close()
     return jsonResponse
 
-@app.post("/articles/{article_id}/comments")
-def add_comment(article_id: int, comment: str = Query(..., description="Comment text")):
+@app.post("/articles/comments")
+def add_comment(link: str = Query(..., description="Article link"), comment: str = Query(..., description="Comment text")):
     conn = sqlite3.connect("factcheck.db")
     c = conn.cursor()
 
-    # Check if article exists
-    c.execute("SELECT id FROM factcheck_articles WHERE id=?", (article_id,))
-    if not c.fetchone():
+    # Find article ID by link
+    c.execute("SELECT id FROM factcheck_articles WHERE url = ?", (link,))
+    row = c.fetchone()
+
+    if not row:
         conn.close()
         raise HTTPException(status_code=404, detail="Article not found")
+
+    article_id = row[0]
 
     # Insert comment into comments table
     c.execute("INSERT INTO comments (comment_text) VALUES (?)", (comment,))
@@ -286,14 +290,26 @@ def add_comment(article_id: int, comment: str = Query(..., description="Comment 
 
     conn.commit()
     conn.close()
-    return {"message": "Comment added successfully", "comment_id": comment_id}
+
+    return {"message": "Comment added successfully", "comment_id": comment_id, "article_id": article_id}
 
 
-@app.get("/articles/{article_id}/comments")
-def get_comments(article_id: int):
+@app.get("/articles/comments")
+def get_comments(link: str = Query(..., description="Article link")):
     conn = sqlite3.connect("factcheck.db")
     c = conn.cursor()
 
+    # Find the article by its link
+    c.execute("SELECT id FROM factcheck_articles WHERE url = ?", (link,))
+    row = c.fetchone()
+
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Article not found")
+
+    article_id = row[0]
+
+    # Retrieve all comments linked to this article
     c.execute('''
         SELECT comments.id, comments.comment_text
         FROM comments
@@ -304,7 +320,12 @@ def get_comments(article_id: int):
     comments = [{"comment_id": row[0], "comment_text": row[1]} for row in c.fetchall()]
     conn.close()
 
-    return {"article_id": article_id, "comments": comments}
+    return {
+        "article_id": article_id,
+        "link": link,
+        "comments": comments
+    }
+
 
 
 @app.get("/comments")
@@ -316,41 +337,96 @@ def get_all_comments():
     conn.close()
     return comments
 
-@app.get("/articles/{article_id}/votes")
-def get_votes(article_id: int):
+@app.get("/articles/votes")
+def get_votes(link: str = Query(..., description="Article link")):
     conn = sqlite3.connect("factcheck.db")
     c = conn.cursor()
-    c.execute("SELECT upvotes, downvotes FROM article_votes WHERE article_ti=?", (article_id,))
+
+    # Look up the article by its link (URL)
+    c.execute("SELECT id FROM factcheck_articles WHERE url = ?", (link,))
+    row = c.fetchone()
+
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Article not found")
+
+    article_id = row[0]
+
+    # Retrieve votes for this article
+    c.execute("SELECT upvotes, downvotes FROM article_votes WHERE article_id = ?", (article_id,))
     result = c.fetchone()
+
     conn.close()
+
     if not result:
-        raise HTTPException(status_code=404, detail="Article not found or no votes yet")
-    return {"article_id": article_id, "upvotes": result[0], "downvotes": result[1]}
+        raise HTTPException(status_code=404, detail="No votes found for this article")
 
-@app.post("/articles/{article_id}/upvote")
-def upvote_article(article_id: int):
+    return {
+        "article_id": article_id,
+        "link": link,
+        "upvotes": result[0],
+       "downvotes": result[1]
+    }
+
+
+
+@app.post("/articles/upvote")
+def upvote_article(link: str = Query(..., description="Article link")):
     conn = sqlite3.connect("factcheck.db")
     c = conn.cursor()
-    c.execute("UPDATE article_votes SET upvotes = upvotes + 1 WHERE article_id=?", (article_id,))
-    if c.rowcount == 0:
+
+    # Find article by link
+    c.execute("SELECT id FROM factcheck_articles WHERE url = ?", (link,))
+    row = c.fetchone()
+
+    if not row:
         conn.close()
         raise HTTPException(status_code=404, detail="Article not found")
+
+    article_id = row[0]
+
+    # Ensure article_votes row exists
+    c.execute("SELECT article_id FROM article_votes WHERE article_id = ?", (article_id,))
+    if not c.fetchone():
+        # If no entry exists yet, initialize one
+        c.execute("INSERT INTO article_votes (article_id, upvotes, downvotes) VALUES (?, 0, 0)", (article_id,))
+
+    # Increment upvote
+    c.execute("UPDATE article_votes SET upvotes = upvotes + 1 WHERE article_id = ?", (article_id,))
     conn.commit()
     conn.close()
-    return {"message": f"Article {article_id} upvoted successfully"}
+
+    return {"message": f"Article '{link}' upvoted successfully", "article_id": article_id}
 
 
-@app.post("/articles/{article_id}/downvote")
-def downvote_article(article_id: int):
+
+@app.post("/articles/downvote")
+def downvote_article(link: str = Query(..., description="Article link")):
     conn = sqlite3.connect("factcheck.db")
     c = conn.cursor()
-    c.execute("UPDATE article_votes SET downvotes = downvotes + 1 WHERE article_id=?", (article_id,))
-    if c.rowcount == 0:
+
+    # Find article by link
+    c.execute("SELECT id FROM factcheck_articles WHERE url = ?", (link,))
+    row = c.fetchone()
+
+    if not row:
         conn.close()
         raise HTTPException(status_code=404, detail="Article not found")
+
+    article_id = row[0]
+
+    # Ensure article_votes row exists
+    c.execute("SELECT article_id FROM article_votes WHERE article_id = ?", (article_id,))
+    if not c.fetchone():
+        # If no entry exists yet, initialize one
+        c.execute("INSERT INTO article_votes (article_id, upvotes, downvotes) VALUES (?, 0, 0)", (article_id,))
+
+    # Increment downvote
+    c.execute("UPDATE article_votes SET downvotes = downvotes + 1 WHERE article_id = ?", (article_id,))
     conn.commit()
     conn.close()
-    return {"message": f"Article {article_id} downvoted successfully"}
+
+    return {"message": f"Article '{link}' downvoted successfully", "article_id": article_id}
 
 @app.get("/votes_by_url")
 def votes_by_url(url: str = Query(..., description="Article URL")):
