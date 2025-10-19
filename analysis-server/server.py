@@ -209,15 +209,15 @@ def fact_check_article(url: str = Query(..., description="BBC article URL")):
         columns = [
             "id", "title", "url", "journalist", "articles_by_journalist",
             "subjectivity", "polarity", "evidence", "total",
-            "highlighted_sentences", "highlighted_words", "related_articles", "response"
+            "highlighted_phrases", "related_articles", "response"
         ]
         conn.close()
 
         # Convert JSON fields back from strings
         jsonResponse = dict(zip(columns, row))
         jsonResponse["articles_by_journalist"] = json.loads(jsonResponse["articles_by_journalist"]) if jsonResponse["articles_by_journalist"] else None
-        jsonResponse["highlighted_sentences"] = json.loads(jsonResponse["highlighted_sentences"]) if jsonResponse["highlighted_sentences"] else []
-        jsonResponse["highlighted_words"] = json.loads(jsonResponse["highlighted_words"]) if jsonResponse["highlighted_words"] else []
+        jsonResponse["highlighted_phrases"] = json.loads(jsonResponse["highlighted_phrases"]) if jsonResponse["highlighted_phrases"] else []
+
         jsonResponse["related_articles"] = json.loads(jsonResponse["related_articles"]) if jsonResponse["related_articles"] else []
 
         return jsonResponse
