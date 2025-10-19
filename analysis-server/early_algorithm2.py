@@ -8,13 +8,13 @@ class TextAnalyzer:
     def __init__(self, text, articles_count):
         self.text = text
         self.articles_count = articles_count
-        self.nlp = spacy.load("en_core_web_sm")
+        self.nlp = spacy.load("en_core_web_trf")
         self.doc = self.nlp(text)
         self.phrases = [sent.text for sent in self.doc.sents]
 
         self.classifier = pipeline(
             "zero-shot-classification",
-            model="facebook/bart-large-mnli",
+            model="typeform/distilbert-base-uncased-mnli",
             device=0 if torch.cuda.is_available() else -1,
             batch_size=16,
             truncation=True
@@ -119,6 +119,7 @@ class TextAnalyzer:
                 label = "direct_quote"
                 
         score = self.category_weights[label]
+
 
 
         self.get_highlighted_sentences(phrase, score)
