@@ -187,16 +187,21 @@
   </button>
 {/if}
 
-<div class="ratings-container">
-  <div class="count-container">
-    <button class="rating-button" on:click={upvote}><ThumbsUp /></button>
-    <span class="count">{upvoteCount}</span>
+<div class="feedback-container">
+  <div class="ratings-container">
+    <div class="count-container">
+      <button class="rating-button" on:click={upvote}><ThumbsUp /></button>
+      <span class="count">{upvoteCount}</span>
+    </div>
+    
+    <div class="count-container">
+      <button class="rating-button" on:click={downvote}><ThumbsDown /></button>
+      <span class="count">{downvoteCount}</span>
+    </div>
+
   </div>
-  
-  <div class="count-container">
-    <button class="rating-button" on:click={downvote}><ThumbsDown /></button>
-    <span class="count">{downvoteCount}</span>
-  </div>
+
+  <input class="comment-input" type="text" placeholder="Add a comment..." />
 </div>
 
 <a href="about.html" target="_blank">Click here to learn more</a>
@@ -272,5 +277,28 @@
     flex-direction: row;
     align-items: center;
     gap: 0.25rem;
+  }
+
+  .feedback-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    width: 100%;
+  }
+
+  .comment-input {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    width: 70%;
+    border-radius: 0.5rem;
+    border: none;
+    outline-width: 1px;
+    outline-style: solid;
+    outline-color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
   }
 </style>
