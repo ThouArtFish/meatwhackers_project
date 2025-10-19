@@ -34,9 +34,8 @@
   let downvoteCount: number = 0;
 
   let canvas:  HTMLCanvasElement;
-  let canvasDisplay: Boolean = false;
   let justClicked: Boolean = false;
-  let articleArray: any[] = [];
+  let articleArray: {title: string, link: string}[] = [];
   let mouse_pos = {x: 0, y: 0}
 
   async function upvote() {
@@ -85,7 +84,7 @@
       { type: "polarity", value: data.polarity },
       { type: "evidence", value: data.evidence },
       { type: "total", value: data.total }
-    ], gemeniResponse);
+    ], gemeniResponse, articleArray);
     state = "completed";
     await tag();
   }
@@ -270,7 +269,7 @@
 
     chrome.scripting.executeScript({
       target: { tabId: tab.id! },
-      func: (stats: { type: string; value: number }[], imageSrcs: string[], geminiResponse: string, badgeColors: Record<string, string>) => {
+      func: (stats: { type: string; value: number }[], imageSrcs: string[], geminiResponse: string, articles: {title: string, link: string}[]) => {
         // Heading icons
         let mainHeading = document.getElementById("main-heading");
         console.log("Main heading:", mainHeading);
@@ -333,6 +332,15 @@
         summary.id = "summary";
         mainHeading.insertAdjacentElement("beforebegin", summary);
         summary.innerText = geminiResponse;
+
+        // Article node map
+        let canvas = document.createElement("canvas")
+        canvas.height = 400
+        canvas.width = 600
+        canvas.style.backgroundColor = "white";
+        mainHeading.insertAdjacentElement("afterend", canvas)
+        window.addEventListener("mousedown", (e) => {clickCheck(e)})
+        drawFrame(canvas, articles)
       },
       args: [stats, imageSrcs, geminiResponse, badgeColors]
     })
@@ -377,15 +385,6 @@
     }
   });
 
-  function quitCheck(e: KeyboardEvent) {
-    if (e.key == "Escape") {
-      canvasDisplay = false;
-      articleArray = [];
-      window.removeEventListener("keydown", quitCheck);
-      window.removeEventListener("mousedown", clickCheck);
-    }
-  }
-
   function clickCheck(e: MouseEvent) {
     const rect = canvas.getBoundingClientRect();
 
@@ -395,7 +394,7 @@
     justClicked = true;
   }
 
-  function drawFrame() {
+  function drawFrame(canvas: HTMLCanvasElement, articles: {title: string, link: string}[]) {
     const ctx = canvas.getContext("2d");
     if (!ctx) { return }
 
@@ -405,10 +404,10 @@
     let start_angle = (2 * Math.PI) / articleArray.length;
     ctx.fillStyle = "#4f46e5";
     ctx.strokeStyle = "#10b981";
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = "8px";
+    ctx.font = "18px";
 
     for (let i = 0; i < articleArray.length; i++) {
       let x = cx + Math.cos(start_angle * (i + 1)) * 0.3 * canvas.width
@@ -424,7 +423,7 @@
       ctx.fill();
       ctx.closePath();
 
-      ctx.strokeText(articleArray[i].title, x, y, 20)
+      ctx.strokeText(articleArray[i].title, x, y)
 
       if (justClicked) {
         justClicked = false
@@ -445,13 +444,9 @@
     ctx.fill();
     ctx.closePath();
 
-    ctx.strokeText("Related Articles", cx, cy, 20)
-
-    requestAnimationFrame(drawFrame)
+    ctx.strokeText("Related Articles", cx, cy)
   }
 </script>
-
-{#if !canvasDisplay}
   <img src="src/assets/logo.svg" alt="Logo" />
   {#if state === "factChecking"}
     <Spinner />
@@ -480,21 +475,7 @@
     <input class="comment-input" type="text" placeholder="Add a comment..." />
   </div>
 
-  {#if articleArray.length != 0}
-    <button class="fact-check-button" on:click={()=>{
-      canvasDisplay = true;
-      window.addEventListener("keydown", e => quitCheck(e))
-      window.addEventListener("mousedown", e => clickCheck(e))
-      requestAnimationFrame(drawFrame);
-    }}>
-      See visualization of related articles
-    </button>
-  {/if}
-
   <a href="about.html" target="_blank">Click here to learn more</a>
-{:else}
-  <canvas bind:this={canvas} id="display"></canvas>
-{/if}
 
 <style>
   * {
