@@ -70,7 +70,7 @@ class TextAnalyzer:
     def get_highlighted_sentences(self, sentence, score):
         
         if score == 0.95:
-            self.highlighted_sentences.append(("direct fact", sentence))
+            self.highlighted_sentences.append(("direct quote", sentence))
         elif score == 1.0:
             self.highlighted_sentences.append(("fact", sentence))
         elif score == 0.8:
