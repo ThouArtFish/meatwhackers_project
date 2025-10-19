@@ -120,7 +120,6 @@ class TextAnalyzer:
                 
         score = self.category_weights[label]
 
-        print(score)
 
         self.get_highlighted_sentences(phrase, score)
         multiplier = result['scores'][0]
