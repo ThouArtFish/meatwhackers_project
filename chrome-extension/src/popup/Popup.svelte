@@ -39,11 +39,56 @@
   let comments: string[] = []
 
   async function upvote() {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    if (voteState === "upvote") return;
+    if (voteState === "downvote") {
+      await fetch(`${PYTHON_SERVER_URL}/articles/downvotes?url=${encodeURIComponent(tab.url!)}&change=-1`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+      }});
+
+      downvoteCount -= 1;
+    }
+
     voteState = "upvote"
+
+    await fetch(`${PYTHON_SERVER_URL}/articles/upvotes?url=${encodeURIComponent(tab.url!)}&change=1`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
+
+    upvoteCount += 1;
   }
 
   async function downvote() {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    if (voteState === "downvote") return;
+    if (voteState === "upvote") {
+      await fetch(`${PYTHON_SERVER_URL}/articles/upvotes?url=${encodeURIComponent(tab.url!)}&change=-1`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+
+      upvoteCount -= 1;
+    }
+
     voteState = "downvote"
+
+    await fetch(`${PYTHON_SERVER_URL}/articles/downvotes?url=${encodeURIComponent(tab.url!)}&change=1`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
+
+    downvoteCount += 1;
   }
 
   // fact checks the current page the user has open
