@@ -6,7 +6,14 @@
 
   const PYTHON_SERVER_URL = "http://localhost:8000";
 
-  type HighlightType = "person" | "organization" | "date" | "evidence";
+  const badgeColors: Record<string, string> = {
+    "subjectivity": "rgba(255, 165, 0, 0.8)",
+    "polarity": "rgba(0, 128, 255, 0.8)",
+    "evidence": "rgba(0, 255, 0, 0.8)",
+    "total": "rgba(128, 0, 255, 0.8)",
+  }
+
+  type HighlightType = "person" | "org" | "date" | "evidence";
 
   type Highlight = {
     text: string;
@@ -15,13 +22,11 @@
 
   type FactCheckState = "ready" | "factChecking" | "completed";
 
-
-
   const highlightColors: Record<HighlightType, string> = {
     person: "rgba(255, 0, 0, 0.5)",
-    organization: "rgba(0, 255, 0, 0.5)",
+    org: "rgba(0, 255, 0, 0.5)",
     date: "rgba(0, 0, 255, 0.5)",
-    evidence: "rgba(255, 255, 0, 0.5)"
+    evidence: "rgba(255, 255, 0, 0.5)",
   }
 
   let state: FactCheckState = "ready";
@@ -46,10 +51,41 @@
     console.log("Fact checking the current page...");
     
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab.url != "https://www.bbc.co.uk/news/business") {
+      let res;
+      try {
+        res = await fetch(`${PYTHON_SERVER_URL}/factcheck_article?url=${encodeURIComponent(tab.url!)}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json"
+          }
+        });
+      } catch (error) {
+        console.error("Error fetching from Python server:", error);
+        state = "ready";
+        return;
+      }
 
+      const data = await res.json();
+      console.log(data)
+
+      const highlightedPhrases: Highlight[] = data.highlighted_phrases as Highlight[];
+      const gemeniResponse: string = data.response as string;
+
+      highlight(highlightedPhrases);
+      displayHeaderIcons([
+        { type: "subjectivity", value: data.subjectivity },
+        { type: "polarity", value: data.polarity },
+        { type: "evidence", value: data.evidence },
+        { type: "total", value: data.total }
+      ], gemeniResponse);
+
+      state = "completed";
+      await tag();
+  } else {
     let res;
     try {
-      res = await fetch(`${PYTHON_SERVER_URL}/factcheck_article?url=${encodeURIComponent(tab.url!)}`, {
+      res = await fetch(`${PYTHON_SERVER_URL}/factcheck_headlines`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json"
@@ -61,75 +97,206 @@
       return;
     }
 
-    const data = await res.json();
-    console.log(data)
+    const allData = await res.json();
 
-    const highlightedSentences: Highlight[] = data.highlighted_sentences as Highlight[];
-    const highlightedWords: Highlight[] = data.highlighted_words as Highlight[];
-    const highlights: Highlight[] = highlightedSentences.concat(highlightedWords);
-    const totalRating: number = data.total as number;
-    const gemeniResponse: string = data.response as string;
+    // Apply icons to all headlines
+    displayHeaderIconsHeadlines(allData.map((data: any) => ([
+        { type: "subjectivity", value: data.subjectivity },
+        { type: "polarity", value: data.polarity },
+        { type: "evidence", value: data.evidence },
+        { type: "total", value: data.total }
+      ])
+    ));
 
-    highlight(highlights);
-    displayHeaderIcons(totalRating, gemeniResponse);
     state = "completed";
     await tag();
   }
+}
 
   // people, names, businesses, dates, evidence
-  async function highlight(highlights: Highlight[]) {
+  async function highlight(phrases: Highlight[]) {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
     chrome.scripting.executeScript({
       target: { tabId: tab.id! },
-      func: (highlights: Highlight[], highlightColors: Record<HighlightType, string>) => {
-        console.log("Highlighting paragraph with highlights:", highlights);
-
-        const paragraphs = document.getElementsByTagName("p");
-        for (const paragraph of paragraphs) {
-          const elements: HTMLElement[] = []
-          const splitPoints: number[] = [];
-
-          highlights.forEach((highlight) => {
-            const startIndex = paragraph.textContent!.indexOf(highlight.text);
-            if (startIndex !== -1) {
-              splitPoints.push(startIndex, startIndex + highlight.text.length);
-            }
-          });
-          
-          for (let i = 0; i < splitPoints.length; i += 2) {
-            const start = splitPoints[i];
-            const end = splitPoints[i + 1];
-            const textBefore = paragraph.textContent!.substring(i === 0 ? 0 : splitPoints[i - 1], start);
-            if (textBefore) {
-              const textNode = document.createTextNode(textBefore);
-              elements.push(textNode as unknown as HTMLElement);
-            }
-            const highlight = highlights.find(h => paragraph.textContent!.substring(start, end) === h.text)!;
-            const span = document.createElement("span");
-            span.textContent = highlight.text;
-            span.style.backgroundColor = highlightColors[highlight.type];
-            span.style.cursor = "pointer";
-            span.onclick = () => {
-              alert(`Highlight: ${highlight.text}`);
-            }
-            
-            elements.push(span);
+      func: (phrases: any[], highlightColors: Record<string, string>) => {
+      // small helper: collect all text nodes that are visible and not inside script/style or already highlighted
+      function collectTextNodes(root: Node) {
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+          // ignore empty/whitespace-only text nodes
+          if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+          // ignore nodes inside script, style, textarea, input or already highlighted spans
+          let parent: Element | null = (node.parentElement as Element | null);
+          while (parent) {
+          const tag = parent.tagName && parent.tagName.toLowerCase();
+          if (tag === 'script' || tag === 'style' || tag === 'textarea' || tag === 'input') {
+            return NodeFilter.FILTER_REJECT;
           }
-
-          // Append any remaining text after the last highlight
-          const lastEnd = splitPoints.length > 0 ? splitPoints[splitPoints.length - 1] : 0;
-          const remainingText = paragraph.textContent!.substring(lastEnd);
-          if (remainingText) {
-            const textNode = document.createTextNode(remainingText);
-            elements.push(textNode as unknown as HTMLElement);
+          if (parent.classList && parent.classList.contains('mw-highlight')) {
+            return NodeFilter.FILTER_REJECT;
           }
-
-          paragraph.innerHTML = ""; // Clear existing content
-          elements.forEach(el => paragraph.appendChild(el));
+          parent = parent.parentElement;
+          }
+          return NodeFilter.FILTER_ACCEPT;
         }
+        });
+        const nodes: Text[] = [];
+        let current = walker.nextNode();
+        while (current) {
+        nodes.push(current as Text);
+        current = walker.nextNode();
+        }
+        return nodes;
+      }
+
+      // collect text nodes only inside article/main paragraphs; fallback to whole body if none found
+      function collectTextNodesInArticleParagraphs() {
+        const paragraphs = Array.from(document.querySelectorAll('article p, main p, [role="main"] p')) as Element[];
+        if (paragraphs.length === 0) {
+          return collectTextNodes(document.body);
+        }
+        const all: Text[] = [];
+        for (const p of paragraphs) {
+          all.push(...collectTextNodes(p));
+        }
+        return all;
+      }
+
+      // ensure a single popup element exists
+      function ensurePopup() {
+        let existing = document.getElementById('mw-fact-popup');
+        if (existing) return existing;
+        const popup = document.createElement('div');
+        popup.id = 'mw-fact-popup';
+        popup.style.position = 'absolute';
+        popup.style.zIndex = '2147483647';
+        popup.style.background = 'white';
+        popup.style.color = 'black';
+        popup.style.padding = '0.5rem';
+        popup.style.borderRadius = '0.5rem';
+        popup.style.boxShadow = '0 6px 18px rgba(0,0,0,0.2)';
+        popup.style.maxWidth = '320px';
+        popup.style.fontSize = '0.9rem';
+        popup.style.display = 'none';
+        document.body.appendChild(popup);
+        return popup;
+      }
+
+      function showPopup(content: string, x: number, y: number) {
+        const popup = ensurePopup();
+        popup.innerText = content;
+        popup.style.left = x + 'px';
+        // prefer above the click if there's space
+        const aboveY = y - popup.offsetHeight - 12;
+        if (aboveY > 0) {
+        popup.style.top = aboveY + 'px';
+        } else {
+        popup.style.top = (y + 12) + 'px';
+        }
+        popup.style.display = 'block';
+
+        function onDocClick(e: MouseEvent) {
+          const target = e.target as Node;
+          if (!popup.contains(target)) {
+            popup.style.display = 'none';
+            document.removeEventListener('click', onDocClick);
+          }
+        }
+        // small timeout so the same click that opened doesn't immediately close it
+        setTimeout(() => document.addEventListener('click', onDocClick), 0);
+      }
+
+      // highlight a single phrase across text nodes using ranges / splitText
+      function highlightPhrase(textToFind: string, type: string) {
+        if (!textToFind || typeof textToFind !== 'string') return;
+        const search = textToFind.trim();
+      if (!search) return;
+        const searchLower = search.toLowerCase();
+        const textNodes = collectTextNodesInArticleParagraphs();
+
+        for (let i = 0; i < textNodes.length; i++) {
+        let node = textNodes[i];
+        // keep searching within this text node while occurrences exist
+        let nodeTextLower = node.nodeValue ? node.nodeValue.toLowerCase() : '';
+        let idx = nodeTextLower.indexOf(searchLower);
+        while (idx !== -1) {
+          // if the node is already inside a highlight (defensive), skip
+          if (node.parentElement && node.parentElement.closest && node.parentElement.closest('.mw-highlight')) {
+          break;
+          }
+
+          // compute offsets
+          const start = idx;
+          const end = idx + search.length;
+
+      // split at end first, then at start so the middle node is the match
+          const after = node.splitText(end); // node now contains [..start..match]
+          const matchNode = node.splitText(start); // matchNode contains only the matched text
+
+          // prevent double-highlighting: if parent already has a mw-highlight child covering this area, skip
+          if (matchNode.parentElement && matchNode.parentElement.classList && matchNode.parentElement.classList.contains('mw-highlight')) {
+          node = after;
+          nodeTextLower = node.nodeValue ? node.nodeValue.toLowerCase() : '';
+          idx = nodeTextLower.indexOf(searchLower);
+          continue;
+          }
+
+          // create wrapper span
+          const span = document.createElement('span');
+          span.className = 'mw-highlight';
+          span.dataset.mwType = type;
+          span.textContent = matchNode.data;
+          const color = (highlightColors && highlightColors[type]) ? highlightColors[type] : 'rgba(255,255,0,0.5)';
+          span.style.backgroundColor = color;
+          span.style.borderRadius = '0.2rem';
+          span.style.padding = '0 0.15rem';
+          span.style.cursor = 'pointer';
+          span.style.transition = 'outline 0.08s ease';
+          span.style.display = 'inline';
+
+          // click handler to show popup
+          span.addEventListener('click', (ev: MouseEvent) => {
+          ev.stopPropagation();
+          const content = `${type.toUpperCase()}: ${matchNode.data}`;
+          // position near click: use clientX/Y + page scroll
+          const x = ev.pageX;
+          const y = ev.pageY;
+          showPopup(content, x, y);
+          });
+
+          // replace the text node containing match with span
+          matchNode.parentNode!.replaceChild(span, matchNode);
+
+          // continue searching in the node after the match
+          node = after;
+          nodeTextLower = node.nodeValue ? node.nodeValue.toLowerCase() : '';
+          idx = nodeTextLower.indexOf(searchLower);
+        }
+        }
+      }
+
+      // iterate phrases and highlight them
+      for (const p of phrases) {
+        try {
+        highlightPhrase(p.text, p.type);
+        } catch (e) {
+        console.error('Highlight error for phrase', p, e);
+        }
+      }
+
+      // optional: add a small stylesheet for highlighted spans (if not already present)
+      if (!document.getElementById('mw-highlight-style')) {
+        const style = document.createElement('style');
+        style.id = 'mw-highlight-style';
+        style.textContent = `
+        .mw-highlight:hover { outline: 2px solid rgba(255,255,255,0.15); }
+        #mw-fact-popup { pointer-events: auto; }
+        `;
+        document.head.appendChild(style);
+      }
       },
-      args: [highlights, highlightColors] // pass highlights as an argument
+      args: [phrases, highlightColors] // pass highlights as an argument
     })
   }
 
@@ -147,27 +314,160 @@
     }
   }
 
-  async function displayHeaderIcons(rating: number, geminiResponse: string) {
+  async function displayHeaderIconsHeadlines(stats: { type: string; value: number }[][]) {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id! },
+      func: (stats: { type: string; value: number }[][]) => {
+        // Find all BBC business headline links
+        let promoLinks = Array.from(document.querySelectorAll("a[class*='PromoLink']"));
+        promoLinks = promoLinks.slice(0, 10);
+        if (promoLinks.length === 0) {
+          console.log("No PromoLink elements found.");
+          return;
+        }
+
+        const descriptions: string[] = [
+          "Emotional or factual bias in the content",
+          "The sentiment expressed in the content: Negative, positive, or neutral",
+          "The number of references to specific facts or sources",
+          "The overall score of the content"
+        ];
+
+        // Inline version of findTierImage so it exists in the page context
+        function findTierImage(rating: number) {
+          switch (true) {
+            case rating < 0.1:
+              return "cap.svg";
+            case rating < 0.3:
+              return "sus.svg";
+            case rating < 0.5:
+              return "mid.svg";
+            default:
+              return "goated.svg";
+          }
+        }
+
+        promoLinks.forEach((link, index) => {
+          const theStats = stats[index]
+          // Make a container for the icons (same look as your displayHeaderIcons)
+          const tierImages = theStats.map(stat => findTierImage(stat.value));
+          const imageSrcs = tierImages.map((tierImage) => chrome.runtime.getURL(`icons/${tierImage}`));
+
+          const container = document.createElement("div");
+          container.style.display = "flex";
+          container.style.flexDirection = "row";
+          container.style.alignItems = "left";
+          container.style.justifyContent = "start";
+          container.style.gap = "0.25rem";
+          container.style.marginTop = "0.25rem";
+
+          // Add 4 rows — one per metric
+          imageSrcs.forEach((imageSrc, index) => {
+            const row = document.createElement("div");
+            row.style.display = "flex";
+            row.style.alignItems = "center";
+            row.style.justifyContent = "flex-start";
+            row.style.gap = "0.25rem";
+
+            const image = document.createElement("img");
+            image.src = imageSrc;
+            image.style.width = "1.5rem";
+            image.style.height = "1.5rem";
+            image.style.borderRadius = "0.25rem";
+
+            const div = document.createElement("div");
+            div.style.display = "flex";
+            div.style.flexDirection = "row";
+            div.style.alignItems = "center";
+            div.style.justifyContent = "center";
+            div.style.gap = "0.25rem";
+            div.style.borderRadius = "999px";
+            div.style.padding = "0.25rem";
+            div.style.backgroundColor = "rgba(0, 0, 0, 0.2)";
+            div.style.width = "fit-content";
+
+            div.appendChild(image);
+            row.appendChild(div);
+            container.appendChild(row);
+          });
+
+          // Insert container after the headline link
+          link.insertAdjacentElement("afterend", container);
+          console.log("inserted icons after promo link");
+        });
+      },
+      args: [stats]
+    });
+  }
+
+  async function displayHeaderIcons(stats: { type: string; value: number }[], geminiResponse: string) {
+    console.log(stats)
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-    const tierImage = findTierImage(rating);
-    const imageSrc = chrome.runtime.getURL(`icons/${tierImage}`);
+    const tierImages = stats.map(stat => findTierImage(stat.value));
+    const imageSrcs = tierImages.map((tierImage) => chrome.runtime.getURL(`icons/${tierImage}`));
 
     chrome.scripting.executeScript({
       target: { tabId: tab.id! },
-      func: (imageSrc: string, geminiResponse: string) => {
+      func: (stats: { type: string; value: number }[], imageSrcs: string[], geminiResponse: string, badgeColors: Record<string, string>) => {
         // Heading icons
         let mainHeading = document.getElementById("main-heading");
         console.log("Main heading:", mainHeading);
         if (!mainHeading) return;
 
-        const image = document.createElement("img");
-        image.src = imageSrc;
-        image.style.width = "2rem";
-        image.style.height = "2rem";
-        image.style.borderRadius = "0.25rem";
+        const descriptions: string[] = [
+          "Emotional or factual bias in the content",
+          "The sentiment expressed in the content: Negative, positive, or neutral",
+          "The number of references to specific facts or sources",
+          "The overall score of the content"
+      ];
 
-        mainHeading.insertAdjacentElement("afterend", image);
+        const container = document.createElement("div");
+        container.style.display = "flex";
+        container.style.flexDirection = "column";
+        container.style.alignItems = "left";
+        container.style.justifyContent = "start";
+        container.style.gap = "0.5rem";
+
+        imageSrcs.forEach((imageSrc, index) => {
+          const row = document.createElement("div");
+          row.style.display = "flex";
+          row.style.alignItems = "center";
+          row.style.justifyContent = "flex-start";
+          row.style.gap = "0.5rem";
+
+          const description = document.createElement("span");
+          description.innerText = `${stats[index].type} - ${descriptions[index]}`;
+          description.style.color = "rgba(0, 0, 0)";
+          description.style.fontSize = "1rem";
+
+          const image = document.createElement("img");
+          image.src = imageSrc;
+          image.style.width = "2rem";
+          image.style.height = "2rem";
+          image.style.borderRadius = "0.25rem";
+
+          const div = document.createElement("div");
+          div.style.display = "flex";
+          div.style.flexDirection = "row";
+          div.style.alignItems = "center";
+          div.style.justifyContent = "center";
+          div.style.gap = "0.5rem";
+          div.style.borderRadius = "999px";
+          div.style.padding = "0.25rem";
+
+          div.style.backgroundColor = "rgb(0, 0, 0, 0.2)";
+          div.style.width = "fit-content";
+
+          div.appendChild(image);
+          row.appendChild(div);
+          row.appendChild(description);
+          container.appendChild(row);
+        });
+
+        mainHeading.insertAdjacentElement("afterend", container);
 
         // Top page summary box
         let summary = document.createElement("p");
@@ -175,7 +475,7 @@
         mainHeading.insertAdjacentElement("beforebegin", summary);
         summary.innerText = geminiResponse;
       },
-      args: [imageSrc, geminiResponse]
+      args: [stats, imageSrcs, geminiResponse, badgeColors]
     })
   }
 
@@ -202,7 +502,7 @@
       }
     })
 
-    return await res.then((injectionResults) => {
+    return await res.then((injectionResults: any) => {
       for (const frameResult of injectionResults) {
         return frameResult.result as boolean;
       }
@@ -211,7 +511,53 @@
     });
   }
 
+  // https://www.bbc.co.uk/news/articles/c62e7xz02dpo
+  function getArticleId(url: string): string | null {
+    try {
+      const u = new URL(url);
+      const path = u.pathname;
+
+      // common pattern: /.../articles/{articleId}
+      const m = path.match(/\/articles\/([^\/?#]+)/i);
+      if (m && m[1]) return m[1];
+
+      // fallback: last non-empty path segment if it looks like an id (alphanumeric)
+      const segments = path.split('/').filter(Boolean);
+      if (segments.length) {
+        const last = segments[segments.length - 1];
+        if (/^[a-z0-9_-]+$/i.test(last)) return last;
+      }
+
+      // check common query params
+      const idFromQuery = u.searchParams.get('id') || u.searchParams.get('articleId') || u.searchParams.get('guid');
+      if (idFromQuery) return idFromQuery;
+
+    } catch (e) {
+      // invalid URL
+    }
+    return null;
+  }
+
   onMount(async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    
+    let votes;
+    try {
+      votes = await fetch(`${PYTHON_SERVER_URL}/votes_by_url?url=${encodeURIComponent(tab.url!)}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+    } catch (error) {
+      console.error(error)
+      return;
+    }
+
+    const json = await votes.json()
+    upvoteCount = json.upvotes
+    downvoteCount = json.downvotes
+
     const tagged = await checkTag();
     if (tagged) {
       state = "completed";

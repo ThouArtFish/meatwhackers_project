@@ -209,15 +209,15 @@ def fact_check_article(url: str = Query(..., description="BBC article URL")):
         columns = [
             "id", "title", "url", "journalist", "articles_by_journalist",
             "subjectivity", "polarity", "evidence", "total",
-            "highlighted_sentences", "highlighted_words", "related_articles", "response"
+            "highlighted_phrases", "related_articles", "response"
         ]
         conn.close()
 
         # Convert JSON fields back from strings
         jsonResponse = dict(zip(columns, row))
         jsonResponse["articles_by_journalist"] = json.loads(jsonResponse["articles_by_journalist"]) if jsonResponse["articles_by_journalist"] else None
-        jsonResponse["highlighted_sentences"] = json.loads(jsonResponse["highlighted_sentences"]) if jsonResponse["highlighted_sentences"] else []
-        jsonResponse["highlighted_words"] = json.loads(jsonResponse["highlighted_words"]) if jsonResponse["highlighted_words"] else []
+        jsonResponse["highlighted_phrases"] = json.loads(jsonResponse["highlighted_phrases"]) if jsonResponse["highlighted_phrases"] else []
+
         jsonResponse["related_articles"] = json.loads(jsonResponse["related_articles"]) if jsonResponse["related_articles"] else []
 
         return jsonResponse
@@ -320,13 +320,12 @@ def get_all_comments():
 def get_votes(article_id: int):
     conn = sqlite3.connect("factcheck.db")
     c = conn.cursor()
-    c.execute("SELECT upvotes, downvotes FROM article_votes WHERE article_id=?", (article_id,))
+    c.execute("SELECT upvotes, downvotes FROM article_votes WHERE article_ti=?", (article_id,))
     result = c.fetchone()
     conn.close()
     if not result:
         raise HTTPException(status_code=404, detail="Article not found or no votes yet")
     return {"article_id": article_id, "upvotes": result[0], "downvotes": result[1]}
-
 
 @app.post("/articles/{article_id}/upvote")
 def upvote_article(article_id: int):
@@ -353,9 +352,104 @@ def downvote_article(article_id: int):
     conn.close()
     return {"message": f"Article {article_id} downvoted successfully"}
 
+@app.get("/votes_by_url")
+def votes_by_url(url: str = Query(..., description="Article URL")):
+    conn = sqlite3.connect("factcheck.db")
+    c = conn.cursor()
+
+    # Find article by URL
+    c.execute("SELECT id FROM factcheck_articles WHERE url = ?", (url,))
+    row = c.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Article not found")
+
+    article_id = row[0]
+
+    # Get votes for that article
+    c.execute("SELECT upvotes, downvotes FROM article_votes WHERE article_id = ?", (article_id,))
+    votes = c.fetchone()
+    conn.close()
+
+    if not votes:
+        upvotes = 0
+        downvotes = 0
+    else:
+        upvotes, downvotes = votes
+
+    total_votes = (upvotes or 0) + (downvotes or 0)
+    return {
+        "url": url,
+        "article_id": article_id,
+        "upvotes": upvotes,
+        "downvotes": downvotes,
+        "total_votes": total_votes
+    }
+
+@app.post("/articles/upvotes")
+def adjust_upvotes(url: str = Query(..., description="Article URL"), change: int = Query(..., description="Use 1 to increment or -1 to decrement")):
+    if change not in (1, -1):
+        raise HTTPException(status_code=400, detail="change must be 1 or -1")
+
+    conn = sqlite3.connect("factcheck.db")
+    c = conn.cursor()
+
+    # Find article by URL
+    c.execute("SELECT id FROM factcheck_articles WHERE url = ?", (url,))
+    row = c.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Article not found")
+    article_id = row[0]
+
+    # Fetch current upvotes (create row if missing)
+    c.execute("SELECT upvotes FROM article_votes WHERE article_id = ?", (article_id,))
+    row = c.fetchone()
+    if row is None:
+        current = 0
+        new = max(0, current + change)
+        c.execute("INSERT INTO article_votes (article_id, upvotes, downvotes) VALUES (?, ?, ?)", (article_id, new, 0))
+    else:
+        current = row[0] or 0
+        new = max(0, current + change)
+        c.execute("UPDATE article_votes SET upvotes = ? WHERE article_id = ?", (new, article_id))
+
+    conn.commit()
+    conn.close()
+    return {"url": url, "article_id": article_id, "upvotes": new}
 
 
+@app.post("/articles/downvotes")
+def adjust_downvotes(url: str = Query(..., description="Article URL"), change: int = Query(..., description="Use 1 to increment or -1 to decrement")):
+    if change not in (1, -1):
+        raise HTTPException(status_code=400, detail="change must be 1 or -1")
 
+    conn = sqlite3.connect("factcheck.db")
+    c = conn.cursor()
+
+    # Find article by URL
+    c.execute("SELECT id FROM factcheck_articles WHERE url = ?", (url,))
+    row = c.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Article not found")
+    article_id = row[0]
+
+    # Fetch current downvotes (create row if missing)
+    c.execute("SELECT downvotes FROM article_votes WHERE article_id = ?", (article_id,))
+    row = c.fetchone()
+    if row is None:
+        current = 0
+        new = max(0, current + change)
+        c.execute("INSERT INTO article_votes (article_id, upvotes, downvotes) VALUES (?, ?, ?)", (article_id, 0, new))
+    else:
+        current = row[0] or 0
+        new = max(0, current + change)
+        c.execute("UPDATE article_votes SET downvotes = ? WHERE article_id = ?", (new, article_id))
+
+    conn.commit()
+    conn.close()
+    return {"url": url, "article_id": article_id, "downvotes": new}
 
 if __name__ == "__main__":
     uvicorn.run("server:app", host='127.0.0.1', port=8000, reload=True, timeout_keep_alive=300)
