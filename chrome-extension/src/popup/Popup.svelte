@@ -457,7 +457,6 @@
   }
 
   async function displayHeaderIcons(stats: { type: string; value: number }[], geminiResponse: string, articles: {title: string, link: string}[]) {
-    console.log(stats)
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
     const tierImages = stats.map(stat => findTierImage(stat.value));
@@ -476,7 +475,7 @@
           "The sentiment expressed in the content: Negative, positive, or neutral",
           "The number of references to specific facts or sources",
           "The overall score of the content"
-      ];
+        ];
 
         const container = document.createElement("div");
         container.style.display = "flex";
@@ -529,8 +528,7 @@
         mainHeading.insertAdjacentElement("beforebegin", summary);
         summary.innerText = geminiResponse;
 
-
-        let nodeMap = [];
+        let nodeMap: any[] = [];
         let mouse_pos = { x: 0, y: 0 };
         const canvas = document.createElement("canvas");
         canvas.width = 600;
@@ -550,8 +548,10 @@
             }
           }
         });
+
         drawFrame(canvas, articles);
-        function drawFrame(canvas, articles) {
+
+        function drawFrame(canvas: HTMLCanvasElement, articles: { title:string, link:string}[]) {
           const ctx = canvas.getContext("2d");
           if (!ctx) return;
 
@@ -602,6 +602,11 @@
             nodeMap.push({ x, y, r: 10, link: articles[i].link });
           }
         }
+      },
+      args: [stats, imageSrcs, geminiResponse, articles]
+    });
+  }
+        
 
   async function tag() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
