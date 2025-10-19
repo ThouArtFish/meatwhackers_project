@@ -527,6 +527,10 @@
         summary.id = "summary";
         mainHeading.insertAdjacentElement("beforebegin", summary);
         summary.innerText = geminiResponse;
+        summary.style.backgroundColor = "#242424";
+        summary.style.color = '#ffffff';
+        summary.style.padding= "2rem";
+        summary.style.borderRadius = "1rem";
 
         let nodeMap: any[] = [];
         let mouse_pos = { x: 0, y: 0 };
@@ -534,7 +538,11 @@
         canvas.width = 600;
         canvas.height = 400;
         canvas.style.backgroundColor = "white";
-        mainHeading.insertAdjacentElement("afterend", canvas);
+        const headings = document.querySelectorAll("h2.ssrcss-ad2rmd-Heading");
+        const relatedTopics = Array.from(headings).find(h => h.textContent.trim() === "Related topics");
+        if (relatedTopics) {
+        relatedTopics.insertAdjacentElement("afterend", canvas);
+        }
         canvas.addEventListener("click", (e) => {
           const rect = canvas.getBoundingClientRect();
           mouse_pos.x = e.clientX - rect.left;
@@ -562,11 +570,11 @@
           const angleStep = (2 * Math.PI) / articles.length;
 
           ctx.fillStyle = "#4f46e5";
-          ctx.strokeStyle = "#10b981";
-          ctx.lineWidth = 3;
+          ctx.strokeStyle = "#101010";
+          ctx.lineWidth = 1;
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
-          ctx.font = "18px sans-serif";
+          ctx.font = "12px sans-serif";
 
           // Draw center node
           ctx.beginPath();
@@ -576,7 +584,7 @@
           ctx.strokeText("Related Articles", cx, cy - 25);
 
           for (let i = 0; i < articles.length; i++) {
-            const angle = i * angleStep;
+            const angle = 3/12 * Math.PI +  i * angleStep;
             const x = cx + Math.cos(angle) * radius;
             const y = cy + Math.sin(angle) * radius;
 
@@ -596,7 +604,8 @@
             const textOffset = 25; // push text outward a bit
             const textX = cx + Math.cos(angle) * (radius + textOffset);
             const textY = cy + Math.sin(angle) * (radius + textOffset);
-            ctx.strokeText(articles[i].title, textX, textY);
+            const title = articles[i].title
+            ctx.strokeText(title, textX, textY);
 
             // Save node data for click detection
             nodeMap.push({ x, y, r: 10, link: articles[i].link });
