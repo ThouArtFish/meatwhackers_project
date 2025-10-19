@@ -21,10 +21,7 @@ class TextAnalyzer:
         )
 
         self.categories = [
-                "verifiable or authoritative evidence (includes official reports, named expert quotes, data, or primary sources)",
-                "second-hand but attributed information (includes statements by named sources, organizations, or officials — not anonymous)",
-                "anonymous or speculative information (includes rumors, vague claims, or unverified reports)",
-    "           neutral or background description (factual context without claims)"
+                "evidence", "secondhand", "hearsay", "neutral"
         ]
 
         self.highlighted_sentences = {"evidence": []}
@@ -108,8 +105,8 @@ class TextAnalyzer:
         
 
         highlighted_list = []
-        for k, v in categories.items():
-            highlighted_list.extend([{"text": item, "type": k} for item in set(v)])
+        for category, entities in categories.items():
+            highlighted_list.extend([{"text": item, "type": category} for item in set(entities)])
 
         return highlighted_list
 
@@ -144,9 +141,18 @@ class TextAnalyzer:
         #add score per evidence
         total += 0.01 * len(highlighted_words)
 
-        boost = min(0.15, 0.05 * math.log10(self.articles_count + 1))
+        # Adujst total score based on authors number of written articles
+        
+        #if no author provided for article
+        if self.articles_count == None: 
+            adjustment = -0.05
+    
+        elif self.articles_count < 5:  
+            adjustment = -0.025
+        else:
+            adjustment = 0.05 * math.log10(self.articles_count + 1)  # small boost for more pages
 
-        total += boost
+        total += adjustment
 
         total = max(min(total, 1), -1)
 
@@ -154,57 +160,53 @@ class TextAnalyzer:
 #ss
 #sadasdas
 if __name__ == '__main__':
-    text = ''''Every week it seems US financial markets are hit by another bout of fear.
+    text = '''Gaza's Hamas-run civil defence says 11 people were killed, all from the same family, after the bus they were in was hit by an Israeli tank shell in northern Gaza.
 
-The latest worries spread this week from the banking sector in the US, after two regional lenders warned they would be hit by losses from alleged fraud.
+The Abu Shaaban family, it said, were trying to reach their home to inspect it when the incident happened in the Zeitoun neighbourhood of Gaza City on Friday night.
 
-But before that, markets swooned over signs of rekindled US-China tensions, as the two superpowers face off over tariffs, advanced technology and access to rare earths.
+This is the deadliest single incident involving Israeli soldiers in Gaza since the start of the ceasefire eight days ago.
 
-The bankruptcies of car parts supplier First Brands and subprime car lender Tricolor acted as a trigger for nervous chatter in September.
+The Israeli military said soldiers had fired at a "suspicious vehicle" that had crossed the so-called yellow line demarcating the area still occupied by Israeli forces in Gaza.
 
-Over the last month, US shares, which had been climbing since their tariff-induced rout in April, have flattened.
+Israeli soldiers continue to operate in more than half of the Gaza Strip, under the terms of the first phase of the ceasefire agreement.
 
-But in many ways the market swings so far - down roughly 3% at the steepest - are not unusual.
+Civil defence spokesman Mahmud Bassal told AFP news agency the victims were killed while "trying to check on their home" in the area.
 
-Zooming out, the major indexes have still posted gains since the start of the year, with the S&P 500 up roughly 13%. That's smaller than 2024 but still solid.
+The dead included women and children, according to the civil defence.
 
-"The market has done surprisingly well so far this year ... driven by an improvement in corporate profits and the enthusiasm surrounding AI," says Sam Stovall, chief investment strategist at CFRA Research.
+The Israel Defence Forces (IDF) said a "suspicious vehicle was identified crossing the yellow line and approaching IDF troops operating in the northern Gaza Strip" on Friday, prompting it to fire "warning shots" towards the vehicle.
 
-The resilience of the stock market is, ironically, exactly what is driving some of the jitters.
+It said the vehicle "continued to approach the troops in a way that caused an imminent threat to them" and "troops opened fire to remove the threat, in accordance with the agreement."
 
-Put simply, when set against other standard metrics like profits, share prices in the US are very high.
+Hamas said the family had been targeted without justification.
 
-Meanwhile, concerns about a possible bubble emerging in the artificial intelligence (AI) industry have generated a steady undercurrent of talk since the start of the year - discussions that have ramped up as analysts struggle to see how the vast sums of money the biggest players are throwing at one another all fit together.
+The IDF has warned Palestinians from entering areas in Gaza still under its control.
 
-The Bank of England warned recently of "stretched valuations" and rising risk of a "sharp market correction".
+With limited internet access, many Palestinians do not know the position of Israeli troops as the yellow demarcation line is not physically marked, and it is unclear if the area where the bus was travelling did cross it.
 
-Those concerns were echoed in remarks from JP Morgan Chase boss Jamie Dimon and to some extent US central bank chair Jerome Powell.
+The BBC has asked the IDF for coordinates of the incident.
 
-The International Monetary Fund was the latest to chime in this week.
+Israeli Defence Minister Israel Katz said on Friday the army would set up visual signs to indicate the location of the line.
 
-"Markets appear complacent as the ground shifts," it said in its financial stability report, which noted risks from trade tensions, geopolitical uncertainty and rising sovereign indebtedness.
+In a separate development, Hamas on Friday released the body of Israeli hostage Eliyahu Margalit to the Red Cross, which returned it to Israel.
 
-James Reilley, senior markets economist at Capital Economics, said the market falls triggered by the regional banks were a sign of investors alert to risk and moving quickly to reduce exposure amid uncertainty about whether the losses were indicative of wider issues.
+Mr Margalit was the tenth deceased hostage to be returned from Gaza. The remains of another 18 people are yet to be repatriated.
 
-But he said the brief nature of the drops showed how quickly such worries could clear.
+Israel handed the bodies of 15 more Palestinians over to officials in Gaza via the Red Cross, the Hamas-run health ministry said, bringing the total number of bodies it has received to 135.
 
-Many investors remain optimistic, with analysts at firms such as Goldman Sachs and Wells Fargo in recent weeks boosting their forecasts for where the S&P 500 might climb by the end of the year.
+There has been anger in Israel that Hamas has not returned all of the dead hostages' bodies, in line with last week's ceasefire deal - though the US has downplayed the suggestion it amounts to a breach.
 
-David Lefkowitz, head of US equities at UBS Global Wealth Management, said he thought a sharp sell-off was unlikely at a time when growth in the US remains solid and the US central bank is lowering borrowing costs.
+The IDF has stressed that Hamas must "uphold the agreement and take the necessary steps to return all the hostages".
 
-He is expecting the S&P 500 to end the year hovering around 6,900 points, about 4% higher than where it sits on Friday.
+Hamas has blamed Israel for making the task difficult because Israeli strikes have reduced so many buildings to rubble and it does not allow heavy machinery and diggers into Gaza to be able to search for the hostages' bodies.
 
-While he acknowledged the troubles popping up at banks, he noted that the lenders involved have alleged fraud.
+As part of the US-brokered ceasefire deal, Israel freed 250 Palestinian prisoners in Israeli jails and 1,718 detainees from Gaza.
 
-He said the overall picture, when looking at default levels, appears healthy, and he saw little risk that demand for AI would suddenly decline, puncturing valuations.
+Hamas also returned all 20 living hostages to Israel.
 
-"I'm not saying we're in a bubble. I'm not saying we're not in a bubble. The question is what's going to drive the downside," he said. "Things don't usually spontaneously decline."
+The Israeli military launched a campaign in Gaza in response to the 7 October 2023 attack, in which Hamas-led gunmen killed about 1,200 people in southern Israel and took 251 others hostage.
 
-A typical bull market - when shares are rising - lasts about four and a half years, said Mr Stovall.
-
-With inflation still sticky, and investors wary of events in Washington, like the government shutdown and Trump administration's efforts to influence the US central bank, this year's market rally has been "unloved", said Mr Stovall.
-
-On the other hand, he noted: "It's just a matter of time. Corrections and bear markets have not been repealed. They might simply be delayed'''
+At least 67,900 people have been killed by Israeli attacks in Gaza since then, according to the territory's Hamas-run health ministry, whose figures are seen by the UN as reliable.'''
     
     analyzer = TextAnalyzer(text, 29)
     S,P,E,T,HS,HW= analyzer.report()

@@ -2,6 +2,7 @@
   import Spinner from "./Spinner.svelte";
   import ThumbsUp from './ThumbsUp.svelte'
   import ThumbsDown from './ThumbsDown.svelte'
+  import { onMount } from 'svelte'
 
   const PYTHON_SERVER_URL = "http://localhost:8000";
 
@@ -13,6 +14,8 @@
   }
 
   type FactCheckState = "ready" | "factChecking" | "completed";
+
+
 
   const highlightColors: Record<HighlightType, string> = {
     person: "rgba(255, 0, 0, 0.5)",
@@ -59,18 +62,22 @@
     }
 
     const data = await res.json();
+    console.log(data)
 
     const highlightedSentences: Highlight[] = data.highlighted_sentences as Highlight[];
+    const highlightedWords: Highlight[] = data.highlighted_words as Highlight[];
+    const highlights: Highlight[] = highlightedSentences.concat(highlightedWords);
     const totalRating: number = data.total as number;
     const gemeniResponse: string = data.response as string;
 
-    highlightSentences(highlightedSentences);
+    highlight(highlights);
     displayHeaderIcons(totalRating, gemeniResponse);
     state = "completed";
+    await tag();
   }
 
   // people, names, businesses, dates, evidence
-  async function highlightSentences(highlights: Highlight[]) {
+  async function highlight(highlights: Highlight[]) {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
     chrome.scripting.executeScript({
@@ -109,7 +116,6 @@
             
             elements.push(span);
           }
-
 
           // Append any remaining text after the last highlight
           const lastEnd = splitPoints.length > 0 ? splitPoints[splitPoints.length - 1] : 0;
@@ -172,6 +178,45 @@
       args: [imageSrc, geminiResponse]
     })
   }
+
+  async function tag() {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id! },
+      func: () => {
+        const tag = document.createElement("div");
+        tag.id = "has-been-fact-checked";
+        document.body.appendChild(tag);
+      }
+    })
+  }
+
+  async function checkTag(): Promise<boolean> {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    const res =chrome.scripting.executeScript({
+      target: { tabId: tab.id! },
+      func: () => {
+        return document.getElementById("has-been-fact-checked") !== null;
+      }
+    })
+
+    return await res.then((injectionResults) => {
+      for (const frameResult of injectionResults) {
+        return frameResult.result as boolean;
+      }
+
+      return false;
+    });
+  }
+
+  onMount(async () => {
+    const tagged = await checkTag();
+    if (tagged) {
+      state = "completed";
+    }
+  });
 </script>
 
 <img src="src/assets/logo.svg" alt="Logo" />
