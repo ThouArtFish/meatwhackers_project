@@ -320,7 +320,7 @@ def get_all_comments():
 def get_votes(article_id: int):
     conn = sqlite3.connect("factcheck.db")
     c = conn.cursor()
-    c.execute("SELECT upvotes, downvotes FROM article_votes WHERE article_id=?", (article_id,))
+    c.execute("SELECT upvotes, downvotes FROM article_votes WHERE article_ti=?", (article_id,))
     result = c.fetchone()
     conn.close()
     if not result:
