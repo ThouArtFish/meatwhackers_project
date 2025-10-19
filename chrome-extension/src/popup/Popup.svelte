@@ -51,7 +51,7 @@
     console.log("Fact checking the current page...");
     
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
+    if (tab.url != "https://www.bbc.co.uk/news/business") {
     let res;
     try {
       res = await fetch(`${PYTHON_SERVER_URL}/factcheck_article?url=${encodeURIComponent(tab.url!)}`, {
@@ -81,7 +81,32 @@
     ], gemeniResponse);
     state = "completed";
     await tag();
-  }
+  } else {
+    let res;
+    try {
+      res = await fetch(`${PYTHON_SERVER_URL}/factcheck_headlines`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching from Python server:", error);
+      state = "ready";
+      return;
+    }
+
+    const data = await res.json();
+    console.log(data);
+
+    // Apply icons to all headlines
+    displayHeaderIconsHeadlines([
+      { type: "subjectivity", value: data.subjectivity },
+      { type: "polarity", value: data.polarity },
+      { type: "evidence", value: data.evidence },
+      { type: "total", value: data.total }
+    ]);
+}
 
   // people, names, businesses, dates, evidence
   async function highlight(phrases: Highlight[]) {
@@ -253,6 +278,83 @@
       default:
         return "goated.svg";
     }
+  }
+
+  async function displayHeaderIconsHeadlines(stats: { type: string; value: number }[]) {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    const tierImages = stats.map(stat => findTierImage(stat.value));
+    const imageSrcs = tierImages.map((tierImage) => chrome.runtime.getURL(`icons/${tierImage}`));
+
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id! },
+      func: (stats: { type: string; value: number }[], imageSrcs: string[], badgeColors: Record<string, string>) => {
+        // Find all BBC business headline links
+        const promoLinks = Array.from(document.querySelectorAll("a[class*='PromoLink']"));
+        if (promoLinks.length === 0) {
+          console.log("No PromoLink elements found.");
+          return;
+        }
+
+        const descriptions: string[] = [
+          "Emotional or factual bias in the content",
+          "The sentiment expressed in the content: Negative, positive, or neutral",
+          "The number of references to specific facts or sources",
+          "The overall score of the content"
+        ];
+
+        promoLinks.forEach((link, i) => {
+          // Make a container for the icons (same look as your displayHeaderIcons)
+          const container = document.createElement("div");
+          container.style.display = "flex";
+          container.style.flexDirection = "column";
+          container.style.alignItems = "left";
+          container.style.justifyContent = "start";
+          container.style.gap = "0.25rem";
+          container.style.marginTop = "0.25rem";
+
+          // Add 4 rows — one per metric
+          imageSrcs.forEach((imageSrc, index) => {
+            const row = document.createElement("div");
+            row.style.display = "flex";
+            row.style.alignItems = "center";
+            row.style.justifyContent = "flex-start";
+            row.style.gap = "0.25rem";
+
+            const description = document.createElement("span");
+            description.innerText = `${stats[index].type}`;
+            description.style.color = "rgba(0, 0, 0)";
+            description.style.fontSize = "0.85rem";
+
+            const image = document.createElement("img");
+            image.src = imageSrc;
+            image.style.width = "1.5rem";
+            image.style.height = "1.5rem";
+            image.style.borderRadius = "0.25rem";
+
+            const div = document.createElement("div");
+            div.style.display = "flex";
+            div.style.flexDirection = "row";
+            div.style.alignItems = "center";
+            div.style.justifyContent = "center";
+            div.style.gap = "0.25rem";
+            div.style.borderRadius = "999px";
+            div.style.padding = "0.25rem";
+            div.style.backgroundColor = "rgba(0, 0, 0, 0.2)";
+            div.style.width = "fit-content";
+
+            div.appendChild(image);
+            row.appendChild(div);
+            row.appendChild(description);
+            container.appendChild(row);
+          });
+
+          // Insert container after the headline link
+          link.insertAdjacentElement("afterend", container);
+        });
+      },
+      args: [stats, imageSrcs, badgeColors]
+    });
   }
 
   async function displayHeaderIcons(stats: { type: string; value: number }[], geminiResponse: string) {
